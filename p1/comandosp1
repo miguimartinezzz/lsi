@@ -1,0 +1,170 @@
+checkear version del SO : lsb_release -d
+checkear version del kernel: uname -r
+ver target activopor defecto: systemctl get-default
+ver lista de targets : systemctl list-units --type target --all
+cambiar target arranque: systemctl set-default (nombre del target)
+mirar tiempos de arranque: systemd-analyze
+ver listado de todos los servicios systemctl list-unit-files --type service --all
+saber qué servicios fallan en el arranque de la maquina: systemctl list-unit-files --state=failed
+listar todas los servicios dependientes de uno: systemctl list-dependencies systemd-bluetooth.service --all --reverse
+listar todas las dependencias de un servicio: systemctl list-dependencies bluetooth
+ver servicios que se usaran despues de arrancar servicios: systemctl list-dependencies --before bluetooth
+Ver los servicios y unidades que tienen que estar activos antes de ejecutar un servicio: systemctl list-dependencies --after bluetooth
+servicios: https://geekland.eu/systemctl-administrar-servicios-linux/
+ver que servicios son los que mas tardan en arrancar: systemd-analyze blame
+DESHABILITAR SERVICIOS: sudo systemctl disable (servicio)
+journald: encargado de recolectar y almacenar los mensajes del kernel y otras fuentes journalctl-> interpreta los logs, los almacena en binario y son volátiles. (-f (realtime)-u (unidad systemd)-k (kernel)--list-boots (lista de los boots ids y timestamp)-b [ID][±offset], (mensajes de un determinado boot, si no hay nada del boot actual)-p PRIORIDAD (0 peores - 7)
+-SERVICIOS QUE HE DESHABILITADO:
+ANTES DE DESHABILITAR: 11.57s
+	-bluetooth.service -> segundo a desactivar: 
+	-ModemManager.service
+	-wpa_supplicant.service
+	-NetworkManager.service -> primero a desactivar: 9.802s: $ systemd-analyze
+                                                                   Startup finished in 3.206s (kernel) + 6.614s (userspace) = 9.820s 
+                                                                   multi-user.target reached after 6.585s in userspace
+
+	-avahi-daemon.service
+	-open-vm-tools.service(no lo quite)
+	-cups.service
+	-cups-browsed.service
+
+
+systemd-analyze critical-chain
+APUNTE: el journal-flush.service me estaba aumentando mucho el tiempo de booteado, por lo que :
+        -entré a nano /etc/systemd/journald.conf
+        -ajuste el almacenamiento a volatil y el max size a 50M
+        -rm -rf /var/log/journal
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+APARTADO F) ->para acceder fichero: nano etc/network/interfaces
+VALORES ENS34:
+       ens34: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.11.51.98  netmask 255.255.254.0  broadcast 10.11.51.255
+        inet6 fe80::250:56ff:fe97:e16f  prefixlen 64  scopeid 0x20<link>
+        ether 00:50:56:97:e1:6f  txqueuelen 1000  (Ethernet)
+        RX packets 365  bytes 104580 (102.1 KiB)
+        RX errors 0  dropped 63  overruns 0  frame 0
+        TX packets 12  bytes 936 (936.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 16  base 0x2080  
+
+MODIFICAR ENS34:  https://www.zeppelinux.es/como-configurar-el-entorno-de-red-en-debian-desde-una-terminal/
+          ifconfig ens34:0 10.11.52.0
+                   netmask 255.255.254.0
+        ens34:0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.11.52.0  netmask 255.255.254.0  broadcast 10.11.52.255
+        ether 00:50:56:97:e1:6f  txqueuelen 1000  (Ethernet)
+        device interrupt 16  base 0x2080 
+   
+PARA TIRARLA: ifconfig ens34:0 down.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+RUTA ESTÁTICA:
+rutas definidas ip route show  (route -n -> tabla enrutamiento)
+Añadir ruta: ip route add default {NETWORK/MASK} dev {DEVICE} 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+I) diseñe pequeño script
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+j) identificar conexiones red.
+netstat      -> -a Muestra todas las conexiones y puertos a la escucha.
+		-n Muestra los puertos y las direcciones en formato numérico.
+		-r Tabla enrutamiento
+		-p Conexiones para el protocolo especificado
+		-u Puerto UDP
+		-t Puertos TCP
+		-o Muestra los timers
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+k) info sistema:
+ps: Imprime los procesos en ejecución.
+top: Porcentaje y tiempo de CPU, así como uso de memoria, de procesos e hilos.
+vmstat: Utilización de la memoria virtual (VM) del sistema.
+free: Consumo global de la VM.
+netstat -c: imprime la info solicitada cada segundo.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+APARTADO ESPECIAL: SOLUCIONAR ERRORES
+-ERROR:     journalctl -p err -b
+        -- Journal begins at Mon 2022-09-26 18:27:30 CEST, ends at Mon 2022-09-26 19:24>
+        sep 26 18:27:31 debian kernel: piix4_smbus 0000:00:07.3: SMBus Host Controller >
+	sep 26 18:27:59 debian pulseaudio[746]: GetManagedObjects() failed: org.freedes>
+	sep 26 18:27:59 debian pipewire[744]: Failed to receive portal pid: org.freedes>
+	sep 26 19:23:58 debian pipewire[900]: Failed to receive portal pid: org.freedes>
+	sep 26 19:23:58 debian pulseaudio[902]: GetManagedObjects() failed: org.freedes>
+	lines 1-6/6 (END)...skipping...
+	-- Journal begins at Mon 2022-09-26 18:27:30 CEST, ends at Mon 2022-09-26 19:24:09 CEST. --
+	sep 26 18:27:31 debian kernel: piix4_smbus 0000:00:07.3: SMBus Host Controller not enabled!
+	sep 26 18:27:59 debian pulseaudio[746]: GetManagedObjects() failed: org.freedesktop.systemd1.NoSuchUnit: Unit dbus-org.bluez.service not found.
+	sep 26 18:27:59 debian pipewire[744]: Failed to receive portal pid: org.freedesktop.DBus.Error.NameHasNoOwner: Could not get PID of name 'org.freedesktop.portal.Desktop': no such name
+	sep 26 19:23:58 debian pipewire[900]: Failed to receive portal pid: org.freedesktop.DBus.Error.NameHasNoOwner: Could not get PID of name 'org.freedesktop.portal.Desktop': no such name
+	sep 26 19:23:58 debian pulseaudio[902]: GetManagedObjects() failed: org.freedesktop.systemd1.NoSuchUnit: Unit dbus-org.bluez.service not found.
+
+para solucionarlo: apt purge *pulseaudio* -> con pipeware lo msmo
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+l)
+tcp-wrapper: permitir conexiones de ciertas ip y denegar el resto
+   nano /etc/hosts.allow 
+   	# localhost + comapañero:
+		sshd: 127.0.0.1, 10.11.49.97, 10.11.51.97: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
+
+	# vpn udc:
+		sshd: 10.30. spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
+
+	# eduroam:
+		sshd: 10.20.32.0/255.255.248.0: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
+
+   nano /etc/hosts.deny
+        all:all twist \
+           spawn \`bin/date\`\: intento de conexión de %a a %A \[DENEGADO\] >> /var/log/deny.log
+           
+           
+     (tuve un problemita y tuvo que arreglarlo mi compa)
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+m) SYSLOG ,RSYSLOG...... (profundizar)
+    basicamente escribir un log ,comprobar primero todos los logs y luego el que escribimos.
+    
+		-logger -p mail.err "holi"
+		-cat /var/log/syslog 
+		-cat /var/log/mail.err
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+n) IPV6 10.11.49.98 -> 2002:mi ip :en hex:1 -> 2002:0a0:3162:1                                    (OJO A THC-IPV6 -> HERRAMIENTA PARA REALIZAR ATAQUES IPV6)
+    
+    Para activar tunel:
+       /etc/network/interfaces
+       iface tun6to4 inet6 v4tunnel
+               address 2002:0a0:3162:1
+               netmask 16
+               gateway 10.11.48.1
+               endpoint any
+               local 10.11.49.98
+               
+       /etc/hosts.allow
+           meter miipv6 y la del compa
+     systemctl restart networking.service
+    DESACTIVAR IPV6 Y SERVICES (NO LO HICE, PARA LA DEFENSA HAY QUE LLEVARLO ACTIVO Y FUNCIONANDO) JEJEEJJEJE
+    
+    /etc/sysctl.conf
+    
+        net.ipv6.conf.all.disable_ipv6=1
+	net.ipv6.conf.default.disable_ipv6=1
+	net.ipv6.conf.lo.disable_ipv6=1
+   
+   sysctl -p
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------    
+==================================================================================PARTE COOPERATIVA=======================================================================================================
+
+a) SERVIDOR NTP. -> NETWORK TIME PROTOCOL.
+
+
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   

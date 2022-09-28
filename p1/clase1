@@ -1,0 +1,37 @@
+target engloba services encapsulan scripts-
+tener disponible acceso red y activo varios usuarios a la vez 
+booot time = kernel time + userspace time (dependiente de targets,services y scripts)
+saber cuanto tarda cada servicio activo
+comandos básicos:
+        -journalctl
+        -systemctl
+        -systemd
+LA MÁQUINA NO PUEDE TENER FALLOS (NI ERROR NI WARNING)
+
+SI ESCOGIMOS BIEN TARGET -> BOOT TIME DE 12 SEGUNDOS (+ -) (tiempo total no debe superar 10 segundos ->  mirar que servicios podemos deshabilitar (disable/ mask))
+
+podemos deshabilitar: -servicios asociados a wifi -> no necesarios ya que tenemos ethernet
+                      -el sonido
+                      -el bluetooth
+
+mask hace un enlace simbolico ,pueden sucerder problemas si maskeamos un servicio que es necesario para otro. 
+
+si hay dependencias -> disable
+
+PLYMOUTH-> NO DESACTIVAR ->IMPORTANTE
+
+debemos hacer el interfaz logico sobre el interfaz físico secundario.
+
+comprobar si la ruta estática funciona mandando un ping a x punto. Checkear.
+
+para instalar servicio en una unidad hay que hacer mas cosas de lo que pone en internet + asociarlo al target que corresponde
+
+MODO DE HACERLO:
+-cambiar target a uno multiusuario y comprobar (si lo escogimos bien -> 12 segundos)
+-comprobar servicios, podar, mirar cadena crítica
+-bajar a 8 segundos y comprobar si tengo errores o warnings
+
+Links importantes:
+https://www.cyberciti.biz/faq/switch-boot-target-to-text-gui-in-systemd-linux/
+
+
