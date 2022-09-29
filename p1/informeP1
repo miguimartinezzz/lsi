@@ -2,7 +2,8 @@
                                                       PRACTICA 1 DE LEGISLACIÓN Y SGEGURIDAD INFORMÁTICA. HOJA DE RUTA.
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-a)Configure su máquina virtual de laboratorio con los datos proporcionados por el profesor. Analice los ficheros básicos de configuración (interfaces, hosts, resolv.conf,  nsswitch.conf, sources.list, etc.) 
+a)Configure su máquina virtual de laboratorio con los datos proporcionados por el profesor. Analice los ficheros básicos de configuración (interfaces, hosts, 
+  resolv.conf,  nsswitch.conf, sources.list, etc.) 
       ESTO LO HAREMOS EN CLASE, PERO DEJO CONSTANCIA POR SI ES NECESARIO.
       (mis IP -> 10.11.49.98, 10.11.51.98)
       Modificar el fichero /etc/network/interfaces 
@@ -38,7 +39,9 @@ b) ¿Qué distro y versión tiene la máquina inicialmente entregada?. Actualice
 	    ->apt upgrade
 	    ->reboot     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-c) Identifique la secuencia completa de arranque de una máquina basada en la distribución de  referencia (desde la pulsación del botón de arranque hasta la pantalla de login). ¿Qué target por  defecto tiene su máquina?. ¿Cómo podría cambiar el target de arranque?. ¿Qué targets tiene su  sistema y en qué estado se encuentran?. ¿Y los services?. Obtenga la relación de servicios de su  sistema y su estado. ¿Qué otro tipo de unidades existen?. 
+c) Identifique la secuencia completa de arranque de una máquina basada en la distribución de  referencia (desde la pulsación del botón de arranque hasta la pantalla de login).
+   ¿Qué target por  defecto tiene su máquina?. ¿Cómo podría cambiar el target de arranque?. ¿Qué targets tiene su  sistema y en qué estado se encuentran?. ¿Y los services?. 
+   Obtenga la relación de servicios de su  sistema y su estado. ¿Qué otro tipo de unidades existen?. 
 	
 	->ver target activo por defecto: systemctl get-default --> GRAPHICAL.TARGET
 	->ver lista de targets : systemctl list-units --type target --all
@@ -51,7 +54,8 @@ d) Determine los tiempos aproximados de botado de su kernel y del userspace. Obt
 	->mirar tiempos de arranque: systemd-analyze
 	->mirar que servicios ralentizan: systemd-analyze blame
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-e) Investigue si alguno de los servicios del sistema falla. Pruebe algunas de las opciones del sistema  de registro journald. Obtenga toda la información journald referente al proceso de botado de la  máquina. ¿Qué hace el systemd-timesyncd?. 
+e) Investigue si alguno de los servicios del sistema falla. Pruebe algunas de las opciones del sistema  de registro journald. Obtenga toda la información journald 
+   referente al proceso de botado de la  máquina. ¿Qué hace el systemd-timesyncd?. 
 
         ->saber qué servicios fallan en el arranque de la maquina: systemctl list-unit-files --state=failed  //journalctl -p err -b
         ->journalctl -u SERVICE muestra el log de un servicio
@@ -86,7 +90,9 @@ g) ¿Qué rutas (routing) están definidas en su sistema?. Incluya una nueva rut
      rutas definidas ip route show  (route -n -> tabla enrutamiento)
      Añadir ruta: ip route add default {NETWORK/MASK} via {NETWORK} 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-h)En el apartado d) se ha familiarizado con los services que corren en su sistema. ¿Son necesarios  todos ellos?. Si identifica servicios no necesarios, proceda adecuadamente. Una limpieza no le  vendrá mal a su equipo, tanto desde el punto de vista de la seguridad, como del rendimiento. 
+h)En el apartado d) se ha familiarizado con los services que corren en su sistema. ¿Son necesarios  todos ellos?. 
+  Si identifica servicios no necesarios, proceda adecuadamente. Una limpieza no le  vendrá mal a su equipo, 
+  tanto desde el punto de vista de la seguridad, como del rendimiento. 
 
 	-saber qué servicios fallan en el arranque de la maquina: systemctl list-unit-files --state=failed  //journalctl -p err -b
 	-listar todas los servicios dependientes de uno: systemctl list-dependencies systemd-bluetooth.service --all --reverse
@@ -96,7 +102,10 @@ h)En el apartado d) se ha familiarizado con los services que corren en su sistem
 	-servicios: https://geekland.eu/systemctl-administrar-servicios-linux/
 	-ver que servicios son los que mas tardan en arrancar: systemd-analyze blame
 	-DESHABILITAR SERVICIOS: sudo systemctl disable (servicio)
-	-journald: encargado de recolectar y almacenar los mensajes del kernel y otras fuentes journalctl-> interpreta los logs, los almacena en binario y son volátiles. (-f (realtime)-u (unidad 		systemd)-k (kernel)--list-boots (lista de los boots ids y timestamp)-b [ID][±offset], (mensajes de un determinado boot, si no hay nada del boot actual)-p PRIORIDAD (0 peores - 7)
+	-journald: encargado de recolectar y almacenar los mensajes del kernel y otras fuentes journalctl-> interpreta los logs, 
+	los almacena en binario y son volátiles. (-f (realtime)-u (unidad)-k (kernel)--list-boots (lista de los boots ids y timestamp)-b [ID][±offset], (
+	 mensajes de un determinado boot, si no hay nada del boot actual)-p PRIORIDAD (0 peores - 7)
+	 
 	SERVICIOS QUE HE DESHABILITADO:
       ---------------------------------------------------------------------------------------------------------------------------------
       	-ANTES DE DESHABILITAR: 11.57s
@@ -167,7 +176,9 @@ j) Identifique las conexiones de red abiertas a y desde su equipo.
 		-t Puertos TCP
 		-o Muestra los timers
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-k) Nuestro sistema es el encargado de gestionar la CPU, memoria, red, etc., como soporte a los datos  y procesos. Monitorice en “tiempo real” la información relevante de los procesos del sistema y  los recursos consumidos. Monitorice en “tiempo real” las conexiones de su sistema.
+k) Nuestro sistema es el encargado de gestionar la CPU, memoria, red, etc., como soporte a los datos  y procesos. 
+   Monitorice en “tiempo real” la información relevante de los procesos del sistema y  los recursos consumidos. 
+   Monitorice en “tiempo real” las conexiones de su sistema.
 
  ->info sistema:
  	ps: Imprime los procesos en ejecución.
@@ -187,14 +198,21 @@ APARTADO ESPECIAL: SOLUCIONAR ERRORES
 	lines 1-6/6 (END)...skipping...
 	-- Journal begins at Mon 2022-09-26 18:27:30 CEST, ends at Mon 2022-09-26 19:24:09 CEST. --
 	sep 26 18:27:31 debian kernel: piix4_smbus 0000:00:07.3: SMBus Host Controller not enabled!
-	sep 26 18:27:59 debian pulseaudio[746]: GetManagedObjects() failed: org.freedesktop.systemd1.NoSuchUnit: Unit dbus-org.bluez.service not found.
-	sep 26 18:27:59 debian pipewire[744]: Failed to receive portal pid: org.freedesktop.DBus.Error.NameHasNoOwner: Could not get PID of name 'org.freedesktop.portal.Desktop': no such name
-	sep 26 19:23:58 debian pipewire[900]: Failed to receive portal pid: org.freedesktop.DBus.Error.NameHasNoOwner: Could not get PID of name 'org.freedesktop.portal.Desktop': no such name
-	sep 26 19:23:58 debian pulseaudio[902]: GetManagedObjects() failed: org.freedesktop.systemd1.NoSuchUnit: Unit dbus-org.bluez.service not found.
+	sep 26 18:27:59 debian pulseaudio[746]: GetManagedObjects() failed: org.freedesktop.systemd1.NoSuchUnit: 
+	   Unit dbus-org.bluez.service not found.
+	sep 26 18:27:59 debian pipewire[744]: Failed to receive portal pid: org.freedesktop.DBus.Error.NameHasNoOwner: 
+	   Could not get PID of name 'org.freedesktop.portal.Desktop': no such name
+	sep 26 19:23:58 debian pipewire[900]: Failed to receive portal pid: org.freedesktop.DBus.Error.NameHasNoOwner: 
+	   Could not get PID of name 'org.freedesktop.portal.Desktop': no such name
+	sep 26 19:23:58 debian pulseaudio[902]: GetManagedObjects() failed: org.freedesktop.systemd1.NoSuchUnit: 
+	   Unit dbus-org.bluez.service not found.
 
 para solucionarlo: apt purge *pulseaudio* -> con pipeware lo msmo
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-l) Un primer nivel de filtrado de servicios los constituyen los tcp-wrappers. Configure el tcp wrapper de su sistema (basado en los ficheros hosts.allow y hosts.deny) para permitir  conexiones SSH a un determinado conjunto de IPs y denegar al resto. ¿Qué política general de  filtrado ha aplicado?. ¿Es lo mismo el tcp-wrapper que un firewall?. Procure en este proceso no  perder conectividad con su máquina. No se olvide que trabaja contra ella en remoto por ssh. 
+l) Un primer nivel de filtrado de servicios los constituyen los tcp-wrappers. Configure el tcp wrapper de su sistema 
+   (basado en los ficheros hosts.allow y hosts.deny) para permitir  conexiones SSH a un determinado conjunto de IPs y denegar al resto. 
+   ¿Qué política general de  filtrado ha aplicado?. ¿Es lo mismo el tcp-wrapper que un firewall?. Procure en este proceso no  perder conectividad con su máquina.
+    No se olvide que trabaja contra ella en remoto por ssh. 
    
    
    tcp-wrapper: permitir conexiones de ciertas ip y denegar el resto
@@ -223,7 +241,8 @@ m) Existen múltiples paquetes para la gestión de logs (syslog, syslog-ng, rsys
 		-cat /var/log/syslog 
 		-cat /var/log/mail.err
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-n)Configure IPv6 6to4 y pruebe ping6 y ssh sobre dicho protocolo. ¿Qué hace su tcp-wrapper en las conexiones ssh en IPv6? Modifique su tcp-wapper siguiendo el criterio del apartado h). 
+n)Configure IPv6 6to4 y pruebe ping6 y ssh sobre dicho protocolo. ¿Qué hace su tcp-wrapper en las conexiones ssh en IPv6?
+  Modifique su tcp-wapper siguiendo el criterio del apartado h). 
   ¿Necesita IPV6?¿Como deshabilita IPV6 en su equipo?
 
 
@@ -304,13 +323,15 @@ b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cl
    systemctl restart rsyslog.service  
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-c)Haga todo tipo de propuestas sobre los siguientes aspectos.: ¿Qué problemas de seguridad identifica en los dos apartados anteriores?. ¿Cómo podría solucionar los problemas  identificados? 
+c)Haga todo tipo de propuestas sobre los siguientes aspectos.: ¿Qué problemas de seguridad identifica en los dos apartados anteriores?. 
+ ¿Cómo podría solucionar los problemas  identificados? 
 
       -NTP se basa en  User Datagram Protocol (UDP) sobre el puerto 123, por lo que es un claro contendiente a un ataque de denegación de servicio. (Ataque DoS)
       -los mensajes del log van sin cifrar por lo que cualquiera puede leer su contenido mediante la técnica del Man in the Middle(MiM).
       -Si alguien consigue acceso al servidor de logs podría ver las ips de todas las máquinas clientes y realizar todo tipo de fechorías con estos datos. 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-d)En la plataforma de virtualización corren, entre otros equipos, más de 200 máquinas virtuales  para LSI. Como los recursos son limitados, y el disco duro también, identifique todas aquellas  acciones que pueda hacer para reducir el espacio de disco ocupado. 
+d)En la plataforma de virtualización corren, entre otros equipos, más de 200 máquinas virtuales  para LSI. 
+  Como los recursos son limitados, y el disco duro también, identifique todas aquellas  acciones que pueda hacer para reducir el espacio de disco ocupado. 
 
 	->OPCIONES QUE YO VEO VIABLES-> borrar idiomas,manuales, apt inutiles.... (añadir más)
 	
