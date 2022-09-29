@@ -1,0 +1,330 @@
+
+                                                      PRACTICA 1 DE LEGISLACIÓN Y SGEGURIDAD INFORMÁTICA. HOJA DE RUTA.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+a)Configure su máquina virtual de laboratorio con los datos proporcionados por el profesor. Analice los ficheros básicos de configuración (interfaces, hosts, resolv.conf,  nsswitch.conf, sources.list, etc.) 
+      ESTO LO HAREMOS EN CLASE, PERO DEJO CONSTANCIA POR SI ES NECESARIO.
+      (mis IP -> 10.11.49.98, 10.11.51.98)
+      Modificar el fichero /etc/network/interfaces 
+       iface ens33 inet static
+	address 10.11.49.98
+	netmask 255.255.254.0
+	broadcast 10.11.49.255
+	network 10.11.48.0
+	gateway 10.11.48.1
+
+       iface ens34 inet static
+	address 10.11.51.98
+	netmask 255.255.254.0
+	broadcast 10.11.51.255
+	network 10.11.50.0
+      	
+	
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+b) ¿Qué distro y versión tiene la máquina inicialmente entregada?. Actualice su máquina a la última  versión estable disponible. 
+
+	->checkear version del SO : lsb_release -d
+	->checkear version del kernel: uname -r
+	-> PARA ACTUALIZAR A DEBIAN 11: (ejecutar todo desde superusuario) 
+	    ->apt update
+	    ->apt upgrade
+	    ->apt full-upgrade
+	    ->apt --purge autoremove
+	    ->reboot
+	    HASTA AQUI EL SISTEMA ESTA EN SU VERSIÓN MINOR, AHORA TENEMOS QUE AÑADIR LOS REPOSITORIOS DE DEBIAN 11.
+	    ->cp -p /etc/apt/sources.list /etc/apt/source.list.antiguo (copia de seguridad por si acaso)
+	    ->nano /etc/apt/sources.list (cambiar todo lo que ponga BUSTER por BULLSEYE)
+	    ->apt update
+	    ->apt upgrade
+	    ->reboot     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c) Identifique la secuencia completa de arranque de una máquina basada en la distribución de  referencia (desde la pulsación del botón de arranque hasta la pantalla de login). ¿Qué target por  defecto tiene su máquina?. ¿Cómo podría cambiar el target de arranque?. ¿Qué targets tiene su  sistema y en qué estado se encuentran?. ¿Y los services?. Obtenga la relación de servicios de su  sistema y su estado. ¿Qué otro tipo de unidades existen?. 
+	
+	->ver target activo por defecto: systemctl get-default --> GRAPHICAL.TARGET
+	->ver lista de targets : systemctl list-units --type target --all
+	->cambiar target arranque: systemctl set-default (nombre del target)
+	->servicios sistema: systemctl list-unit-files --type=service
+	->otro tipo de unidades: systemctl list-units -t help
+	
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+d) Determine los tiempos aproximados de botado de su kernel y del userspace. Obtenga la relación  de los tiempos de ejecución de los services de su sistema.  
+	->mirar tiempos de arranque: systemd-analyze
+	->mirar que servicios ralentizan: systemd-analyze blame
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+e) Investigue si alguno de los servicios del sistema falla. Pruebe algunas de las opciones del sistema  de registro journald. Obtenga toda la información journald referente al proceso de botado de la  máquina. ¿Qué hace el systemd-timesyncd?. 
+
+        ->saber qué servicios fallan en el arranque de la maquina: systemctl list-unit-files --state=failed  //journalctl -p err -b
+        ->journalctl -u SERVICE muestra el log de un servicio
+	->journalctl -b muestra el log del boot actual.
+	->systemd-timesyncd es un servicio del sistema que se usa para sincronizar el reloj local del sistema con un servidor NTP remoto
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+f) Identifique y cambie los principales parámetros de su segundo interface de red (ens34). Configure un segundo interface lógico. Al terminar, déjelo como estaba.
+     VALORES ENS34:
+        ens34: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.11.51.98  netmask 255.255.254.0  broadcast 10.11.51.255
+        inet6 fe80::250:56ff:fe97:e16f  prefixlen 64  scopeid 0x20<link>
+        ether 00:50:56:97:e1:6f  txqueuelen 1000  (Ethernet)
+        RX packets 365  bytes 104580 (102.1 KiB)
+        RX errors 0  dropped 63  overruns 0  frame 0
+        TX packets 12  bytes 936 (936.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 16  base 0x2080  
+
+MODIFICAR ENS34 
+          -ifconfig ens34:0 10.11.52.0  netmask 255.255.254.0 -> NO PERSISTENTE
+          -PERSISTENTE -> /etc/network/interfaces:
+                 ens34:0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+                 inet 10.11.52.0  netmask 255.255.254.0  broadcast 10.11.52.255
+                 ether 00:50:56:97:e1:6f  txqueuelen 1000  (Ethernet)
+                 device interrupt 16  base 0x2080 
+
+PARA LEVANTARLA: ifconfig ens34:0 up.    
+PARA TIRARLA: ifconfig ens34:0 down.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+g) ¿Qué rutas (routing) están definidas en su sistema?. Incluya una nueva ruta estática a una  determinada red. 
+
+     rutas definidas ip route show  (route -n -> tabla enrutamiento)
+     Añadir ruta: ip route add default {NETWORK/MASK} via {NETWORK} 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+h)En el apartado d) se ha familiarizado con los services que corren en su sistema. ¿Son necesarios  todos ellos?. Si identifica servicios no necesarios, proceda adecuadamente. Una limpieza no le  vendrá mal a su equipo, tanto desde el punto de vista de la seguridad, como del rendimiento. 
+
+	-saber qué servicios fallan en el arranque de la maquina: systemctl list-unit-files --state=failed  //journalctl -p err -b
+	-listar todas los servicios dependientes de uno: systemctl list-dependencies systemd-bluetooth.service --all --reverse
+	-listar todas las dependencias de un servicio: systemctl list-dependencies bluetooth
+	-ver servicios que se usaran despues de arrancar servicios: systemctl list-dependencies --before bluetooth
+	-Ver los servicios y unidades que tienen que estar activos antes de ejecutar un servicio: systemctl list-dependencies --after bluetooth
+	-servicios: https://geekland.eu/systemctl-administrar-servicios-linux/
+	-ver que servicios son los que mas tardan en arrancar: systemd-analyze blame
+	-DESHABILITAR SERVICIOS: sudo systemctl disable (servicio)
+	-journald: encargado de recolectar y almacenar los mensajes del kernel y otras fuentes journalctl-> interpreta los logs, los almacena en binario y son volátiles. (-f (realtime)-u (unidad 		systemd)-k (kernel)--list-boots (lista de los boots ids y timestamp)-b [ID][±offset], (mensajes de un determinado boot, si no hay nada del boot actual)-p PRIORIDAD (0 peores - 7)
+	SERVICIOS QUE HE DESHABILITADO:
+      ---------------------------------------------------------------------------------------------------------------------------------
+      	-ANTES DE DESHABILITAR: 11.57s
+	-bluetooth.service -> segundo a desactivar: 
+	-ModemManager.service
+	-wpa_supplicant.service
+	-NetworkManager.service -> primero a desactivar: 9.802s: $ systemd-analyze
+                                                                   Startup finished in 3.206s (kernel) + 6.614s (userspace) = 9.820s 
+                                                                   multi-user.target reached after 6.585s in userspace
+
+	-avahi-daemon.service
+	-open-vm-tools.service(no lo quite)
+	-cups.service
+	-cups-browsed.service
+       -------------------------------------------------------------------------------------------------------------------------------
+
+	-systemd-analyze critical-chain -> orden de arranque y servicios que retrasan
+	
+	APUNTE: el journal-flush.service me estaba aumentando mucho el tiempo de booteado, por lo que :
+        -entré a nano /etc/systemd/journald.conf
+        -ajuste el almacenamiento a volatil y el max size a 50M
+        -rm -rf /var/log/journal
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+i) Diseñe y configure un pequeño “script” y defina la correspondiente unidad de tipo service para  que se ejecute en el proceso de botado de su máquina
+    
+        En este caso se nos pidió un script que hiciese un backup de algo, decidimos hacer un backup del directorio /home/lsi
+        (todo se ejecuta como superusuario)
+        1.CREAMOS LOS DOS FICHERO, EL SCRIPT Y EL SERVICE QUE USARÁ EL SCRIPT:
+        -nano backup.sh:
+                #!/bin/bash
+	        echo "Crea una copia de seguridad de los discos del sistema"
+                tar -czvf /backuphome.tar.gz /home/lsi
+         -nano /etc/systemd/system/backuphome.service:
+                [Unit]
+		Description= Crea una copia del directorio /home/lsi
+		After=  multi-user.target
+		StartLimitIntervalSec=1
+		[Service]
+		Type=simple
+		Restart=on-failure
+		User=lsi
+		ExecStart=/home/lsi/backup.sh
+		[Install]
+		WantedBy=multi-user.target
+	2.LE DAMOS PERMISOS DE EJECUCIÓN A AMBOS:
+	-chmod +x backup.sh
+	-chmod +x /etc/systemd/system/backuphome.service
+	3.EJECUTAMOS SCRIPT PARA QUE EL TAR.GZ SEA CREADO, Y LE DAMOS PERMISOS PARA QUE EL SERVICE LO PUEDA LEER Y MODIFICAR.
+	-./backup.sh
+	-chmod +rw  /backuphome.tar.gz
+	4.REINICIAMOS SERVICIOS, HABILITAMOS Y REBOOTEAMOS SISTEMA PARA QUE SE PUEDA UTILIZAR.
+	-systemctl daemon-reload(reiniciar servicios)
+	-systemctl start backuphome.service
+	-systemctl enable backuphome.service
+	-reboot
+	5.COMPROBAMOS QUE FUNCIONA.
+	-systemctl status backuphome.service 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+j) Identifique las conexiones de red abiertas a y desde su equipo.
+
+ identificar conexiones red.
+       netstat 
+                -a Muestra todas las conexiones y puertos a la escucha.
+		-n Muestra los puertos y las direcciones en formato numérico.
+		-r Tabla enrutamiento
+		-p Conexiones para el protocolo especificado
+		-u Puerto UDP
+		-t Puertos TCP
+		-o Muestra los timers
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+k) Nuestro sistema es el encargado de gestionar la CPU, memoria, red, etc., como soporte a los datos  y procesos. Monitorice en “tiempo real” la información relevante de los procesos del sistema y  los recursos consumidos. Monitorice en “tiempo real” las conexiones de su sistema.
+
+ ->info sistema:
+ 	ps: Imprime los procesos en ejecución.
+	top: Porcentaje y tiempo de CPU, así como uso de memoria, de procesos e hilos.
+	vmstat: Utilización de la memoria virtual (VM) del sistema.
+	free: Consumo global de la VM.
+	netstat -c: imprime la info solicitada cada segundo.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+APARTADO ESPECIAL: SOLUCIONAR ERRORES
+-ERROR:     journalctl -p err -b
+        -- Journal begins at Mon 2022-09-26 18:27:30 CEST, ends at Mon 2022-09-26 19:24>
+        sep 26 18:27:31 debian kernel: piix4_smbus 0000:00:07.3: SMBus Host Controller >
+	sep 26 18:27:59 debian pulseaudio[746]: GetManagedObjects() failed: org.freedes>
+	sep 26 18:27:59 debian pipewire[744]: Failed to receive portal pid: org.freedes>
+	sep 26 19:23:58 debian pipewire[900]: Failed to receive portal pid: org.freedes>
+	sep 26 19:23:58 debian pulseaudio[902]: GetManagedObjects() failed: org.freedes>
+	lines 1-6/6 (END)...skipping...
+	-- Journal begins at Mon 2022-09-26 18:27:30 CEST, ends at Mon 2022-09-26 19:24:09 CEST. --
+	sep 26 18:27:31 debian kernel: piix4_smbus 0000:00:07.3: SMBus Host Controller not enabled!
+	sep 26 18:27:59 debian pulseaudio[746]: GetManagedObjects() failed: org.freedesktop.systemd1.NoSuchUnit: Unit dbus-org.bluez.service not found.
+	sep 26 18:27:59 debian pipewire[744]: Failed to receive portal pid: org.freedesktop.DBus.Error.NameHasNoOwner: Could not get PID of name 'org.freedesktop.portal.Desktop': no such name
+	sep 26 19:23:58 debian pipewire[900]: Failed to receive portal pid: org.freedesktop.DBus.Error.NameHasNoOwner: Could not get PID of name 'org.freedesktop.portal.Desktop': no such name
+	sep 26 19:23:58 debian pulseaudio[902]: GetManagedObjects() failed: org.freedesktop.systemd1.NoSuchUnit: Unit dbus-org.bluez.service not found.
+
+para solucionarlo: apt purge *pulseaudio* -> con pipeware lo msmo
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+l) Un primer nivel de filtrado de servicios los constituyen los tcp-wrappers. Configure el tcp wrapper de su sistema (basado en los ficheros hosts.allow y hosts.deny) para permitir  conexiones SSH a un determinado conjunto de IPs y denegar al resto. ¿Qué política general de  filtrado ha aplicado?. ¿Es lo mismo el tcp-wrapper que un firewall?. Procure en este proceso no  perder conectividad con su máquina. No se olvide que trabaja contra ella en remoto por ssh. 
+   
+   
+   tcp-wrapper: permitir conexiones de ciertas ip y denegar el resto
+   nano /etc/hosts.allow 
+   	# localhost + comapañero:
+		sshd: 127.0.0.1, 10.11.49.97, 10.11.51.97: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
+
+	# vpn udc:
+		sshd: 10.30.: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
+
+	# eduroam:
+		sshd: 10.20.32.0/255.255.248.0: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
+
+   nano /etc/hosts.deny
+        all:all twist \
+           spawn \`bin/date\`\: intento de conexión de %a a %A \[DENEGADO\] >> /var/log/deny.log
+           
+           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+m) Existen múltiples paquetes para la gestión de logs (syslog, syslog-ng, rsyslog). Utilizando el  rsyslog pruebe su sistema de log local.
+
+   SYSLOG ,RSYSLOG...... (profundizar)
+    basicamente escribir un log ,comprobar primero todos los logs y luego el que escribimos.
+    
+		-logger -p mail.err "holi"
+		-cat /var/log/syslog 
+		-cat /var/log/mail.err
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+n)Configure IPv6 6to4 y pruebe ping6 y ssh sobre dicho protocolo. ¿Qué hace su tcp-wrapper en las conexiones ssh en IPv6? Modifique su tcp-wapper siguiendo el criterio del apartado h). 
+  ¿Necesita IPV6?¿Como deshabilita IPV6 en su equipo?
+
+
+  IPV6 10.11.49.98 -> 2002:mi ip :en hex:1 -> 2002:0a0:3162:1                                    (OJO A THC-IPV6 -> HERRAMIENTA PARA REALIZAR ATAQUES IPV6)
+    
+    Para activar tunel:
+       /etc/network/interfaces
+       iface tun6to4 inet6 v4tunnel
+               address 2002:0a0:3162:1
+               netmask 16
+               gateway 10.11.48.1
+               endpoint any
+               local 10.11.49.98
+               
+       /etc/hosts.allow
+           meter miipv6 y la del compa
+     systemctl restart networking.service
+    DESACTIVAR IPV6 Y SERVICES (NO LO HICE, PARA LA DEFENSA HAY QUE LLEVARLO ACTIVO Y FUNCIONANDO) JEJEEJJEJE
+    
+    /etc/sysctl.conf
+    
+        net.ipv6.conf.all.disable_ipv6=1
+	net.ipv6.conf.default.disable_ipv6=1
+	net.ipv6.conf.lo.disable_ipv6=1
+   
+   sysctl -p
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------    
+==================================================================================PARTE COOPERATIVA=======================================================================================================
+
+a)En colaboración con otro alumno de prácticas, configure un servidor y un cliente NTP.
+
+ SERVIDOR NTP. -> NETWORK TIME PROTOCOL.
+ Primero debemos descargar el ntp para poder configurar un servidor o un cliente ntp, por lo que ejecutamos estos comandos:
+  -apt-get update
+  -apt-get install ntp ntpdate
+  -timedatectl
+ ESTO DEBEMOS EJECUTARLO LOS DOS:
+ acceder a /etc/ntp.conf y escribir lo siguiente:
+ -PARTE SERVIDOR:
+            -comentar pools de datos.
+            https://www.tek-tips.com/viewthread.cfm?qid=336666
+            -añadir cliente en hosts.allow: 10.11.49.97 (yo soy servidor)
+ -PARTE CLIENTE:
+	    -comentar pools y añadir ip del servidor
+	    
+  RESTART SERVICE HACIENDO : restrtict (ip server)
+  COMPROBAR QUE FUNCOINA: ntpq -p
+  →Servidor tira abajo el servicio:
+    systemctl stop system-tymesyncd.service
+ →Guardamos cambios:
+    systemctl restart ntp.
+  →El servidor cambia la fecha con:
+    date -- set “2017-08-02 12:45”
+  →El cliente solicita la fecha y hora via NTP con:
+    ntpdate -u 10.11.48.45
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cliente de logs:
+   
+   /etc/rsyslog.conf ->entrar en este archivo y configurar:
+   
+  SERVIDOR:
+        -descomentar las lineas de tcp para permitirlo
+        -(añadir en #rules:fromhost-ip,isequal,"10.11.49.97" /var/log/messages -> añadir fichero donde se guardarán los logs que lleguen desde esta ip
+	-AllowedSender TCP 127.0.0.1, 10.11.49.97 -> server solo acepta mensajes del compañero
+	-añadir al cliente en hosts.allow: rsyslogd: 10.11.49.97
+  CLIENTE:
+	-añadir al final del fichero: 
+	*.* action(
+               type="omfwd" 
+               target="10.11.49.98" 
+               port="514" 
+               protocol="tcp" 
+               action.resumeRetryCount="-1"
+               queue.type="linkedlist"
+               queue.filename="/var/log/rsyslog-queue"
+              queue.saveOnShutdown="on"
+           )  
+   systemctl restart rsyslog.service  
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c)Haga todo tipo de propuestas sobre los siguientes aspectos.: ¿Qué problemas de seguridad identifica en los dos apartados anteriores?. ¿Cómo podría solucionar los problemas  identificados? 
+
+      -NTP se basa en  User Datagram Protocol (UDP) sobre el puerto 123, por lo que es un claro contendiente a un ataque de denegación de servicio. (Ataque DoS)
+      -los mensajes del log van sin cifrar por lo que cualquiera puede leer su contenido mediante la técnica del Man in the Middle(MiM).
+      -Si alguien consigue acceso al servidor de logs podría ver las ips de todas las máquinas clientes y realizar todo tipo de fechorías con estos datos. 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+d)En la plataforma de virtualización corren, entre otros equipos, más de 200 máquinas virtuales  para LSI. Como los recursos son limitados, y el disco duro también, identifique todas aquellas  acciones que pueda hacer para reducir el espacio de disco ocupado. 
+
+	->OPCIONES QUE YO VEO VIABLES-> borrar idiomas,manuales, apt inutiles.... (añadir más)
+	
+	
+   COMPROBAR USO DE MEMORIA CON df -h.
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
