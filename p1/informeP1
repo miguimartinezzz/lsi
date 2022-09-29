@@ -279,6 +279,7 @@ a)En colaboración con otro alumno de prácticas, configure un servidor y un cli
   -apt-get update
   -apt-get install ntp ntpdate
   -timedatectl
+  
  ESTO DEBEMOS EJECUTARLO LOS DOS:
  acceder a /etc/ntp.conf y escribir lo siguiente:
  -PARTE SERVIDOR:
@@ -288,16 +289,88 @@ a)En colaboración con otro alumno de prácticas, configure un servidor y un cli
  -PARTE CLIENTE:
 	    -comentar pools y añadir ip del servidor
 	    
-  RESTART SERVICE HACIENDO : restrtict (ip server)
+  RESTART SERVICE HACIENDO : systemctl restart ntp
   COMPROBAR QUE FUNCOINA: ntpq -p
   →Servidor tira abajo el servicio:
     systemctl stop system-tymesyncd.service
  →Guardamos cambios:
     systemctl restart ntp.
-  →El servidor cambia la fecha con:
-    date -- set “2017-08-02 12:45”
+  ->service ntp stop -> cliente debe parar el servicio ntp  
   →El cliente solicita la fecha y hora via NTP con:
-    ntpdate -u 10.11.48.45
+    -date +%T -s 1 -> el cliente se cambia la hora 
+    -ntpdate (ip server) -> el cliente ajusta la hora según lo que da el servidor.
+    -ntpq -p -> comprobar estado servidor para demostrar que funciona.
+    
+   ASÍ DEBE QUEDAR EL ARCHIVO:
+   
+# /etc/ntp.conf, configuration for ntpd; see ntp.conf(5) for help
+
+driftfile /var/lib/ntp/ntp.drift
+
+# Leap seconds definition provided by tzdata
+leapfile /usr/share/zoneinfo/leap-seconds.list
+
+# Enable this if you want statistics to be logged.
+#statsdir /var/log/ntpstats/
+
+statistics loopstats peerstats clockstats
+filegen loopstats file loopstats type day enable
+filegen peerstats file peerstats type day enable
+filegen clockstats file clockstats type day enable
+
+
+# You do need to talk to an NTP server or two (or three).
+#server ntp.your-provider.example
+
+# pool.ntp.org maps to about 1000 low-stratum NTP servers.  Your server will
+# pick a different set every time it starts up.  Please consider joining the
+# pool: <http://www.pool.ntp.org/join.html>
+#pool 0.debian.pool.ntp.org iburst
+#pool 1.debian.pool.ntp.org iburst
+#pool 2.debian.pool.ntp.org iburst
+#pool 3.debian.pool.ntp.org iburst
+
+
+# Access control configuration; see /usr/share/doc/ntp-doc/html/accopt.html for
+# details.  The web page <http://support.ntp.org/bin/view/Support/AccessRestrictions>
+# might also be helpful.
+#
+# Note that "restrict" applies to both servers and clients, so a configuration
+# that might be intended to block requests from certain clients could also end
+# up blocking replies from your own upstream servers.
+
+server 127.127.1.1 minpoll 4 prefer
+fudge 127.127.1.1 stratum 10
+
+# By default, exchange time with everybody, but don't allow configuration.
+restrict -4 default kod notrap nomodify nopeer noquery limited
+restrict -6 default kod notrap nomodify nopeer noquery limited
+#comentar
+restrict 127.127.1.1 mask 255.255.255.255 noserve nomodify
+restrict 10.11.49.97 mask 255.255.255.255 noquery nomodify
+
+# Local users may interrogate the ntp server more closely.
+restrict 127.0.0.1
+restrict ::1
+# Needed for adding pool entries
+#restrict source notrap nomodify noquery
+# Clients from this (example!) subnet have unlimited access, but only if
+# cryptographically authenticated.
+#restrict 192.168.123.0 mask 255.255.255.0 notrust
+
+
+# If you want to provide time to your local subnet, change the next line.
+# (Again, the address is an example only.)
+#broadcast 192.168.123.255
+
+# If you want to listen to time broadcasts on your local subnet, de-comment the
+# next lines.  Please do this only if you trust everybody on the network!
+#disable auth
+#broadcastclient
+#server 10.11.49.97 minpoll 4 prefer
+#fudge 10.10.102.119 stratum
+#restrict 10.11.49.97 mask 255.255.255.255 noquery nopeer
+
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cliente de logs:
    
@@ -305,7 +378,11 @@ b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cl
    
   SERVIDOR:
         -descomentar las lineas de tcp para permitirlo
-        -(añadir en #rules:fromhost-ip,isequal,"10.11.49.97" /var/log/messages -> añadir fichero donde se guardarán los logs que lleguen desde esta ip
+        -#TEMPLATE PARA GUARDAR MENSAJES
+	$template remote, "/var/log/rsyslog-server/%fromhost-ip%/%programname%.log"
+	*.* ?remote
+	& stop
+
 	-AllowedSender TCP 127.0.0.1, 10.11.49.97 -> server solo acepta mensajes del compañero
 	-añadir al cliente en hosts.allow: rsyslogd: 10.11.49.97
   CLIENTE:
@@ -321,6 +398,33 @@ b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cl
               queue.saveOnShutdown="on"
            )  
    systemctl restart rsyslog.service  
+ 
+ para comprobar ejecutar:
+ 
+ CLIENTE:
+  root@debian:/home/lsi# logger "<esto es una prueba uwu>" -> PARA PROBAR EL LOGGER ACTIVO
+  
+  (con los servicios desactivados)
+  root@debian:/home/lsi# logger "<esto es la prueba de la colita>" -> PARA PROBAR LA COLA DE ADMISIÓN
+  root@debian:/home/lsi# logger "<esto es la prueba de la colitax2>"
+  root@debian:/home/lsi# logger "<esto es la prueba de la colitax3>"
+ 
+ SERVIDOR:
+  cat /var/log/rsyslog-server/10.11.49.97/lsi.log -> aqui deberia estar el primer logger.
+  
+  (para probar la cola desactivamos servicios)
+  systemctl stop syslog.socket
+  systemctl stop rsyslog.service
+  systemctl stop syslog.service
+  
+  (CLIENTE LANZA LOS LOGGERS ENCADENADOS)
+  
+  systemctl start syslog.socket
+  systemctl start rsyslog.service
+  systemctl start syslog.service
+  cat /var/log/rsyslog-server/10.11.49.97/lsi.log  ->AQUI DEBERIAN APARECER LOS 3 LOGS.
+  
+
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 c)Haga todo tipo de propuestas sobre los siguientes aspectos.: ¿Qué problemas de seguridad identifica en los dos apartados anteriores?. 
@@ -328,14 +432,30 @@ c)Haga todo tipo de propuestas sobre los siguientes aspectos.: ¿Qué problemas 
 
       -NTP se basa en  User Datagram Protocol (UDP) sobre el puerto 123, por lo que es un claro contendiente a un ataque de denegación de servicio. (Ataque DoS)
       -los mensajes del log van sin cifrar por lo que cualquiera puede leer su contenido mediante la técnica del Man in the Middle(MiM).
-      -Si alguien consigue acceso al servidor de logs podría ver las ips de todas las máquinas clientes y realizar todo tipo de fechorías con estos datos. 
+      -Si alguien consigue acceso al servidor de logs podría ver las ips de todas las máquinas clientes y realizar todo tipo de fechorías con estos datos.
+      
+      SOLUCIONES:
+       -para solucionar el primer y el tercer supuesto podríamos recurrir a un firewall para evitar accesos y solicitudes de IPs no autorizadas,
+       además de configurar el servidor para no poder acceder a todos los logs ,entre otras medidas.
+       -añadir que rsyslog al estar implementado sobre tráfico TCP/IP ya incluye métodos de cifrado y aseguramiento de comunicaciones.
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 d)En la plataforma de virtualización corren, entre otros equipos, más de 200 máquinas virtuales  para LSI. 
   Como los recursos son limitados, y el disco duro también, identifique todas aquellas  acciones que pueda hacer para reducir el espacio de disco ocupado. 
 
-	->OPCIONES QUE YO VEO VIABLES-> borrar idiomas,manuales, apt inutiles.... (añadir más)
-	
-	
+    OPCIONES MÁS VIABLES:
+     
+     -apt autoclean: sirve para eliminar de la caché paquetes obsoletos que ya no se utilizan.
+     -apt clean: elimina TODO de la caché -> no recomendado por si acaso.
+     -apt-get autoremove: elimina las librerías y paquetes que se instalaron automáticamente para satisfacer las dependencias de un paquete instalado.
+     -borrar imagenes antiguas del kernel:
+         ->dpkg --list | grep linux-image: Muestra los kernels que tenemos en el sistema.
+         ->apt-get --purge remove linux-image-4      :elimina imagen antigua
+         ->borrar todas hasta que quede asi:
+            root@debian:/home/lsi# dpkg --list | grep linux-image
+		ii  linux-image-5.10.0-18-amd64           5.10.140-1                       amd64        Linux 5.10 for 64-bit PCs (signed)
+		ii  linux-image-amd64                     5.10.140-1                       amd64        Linux for 64-bit PCs (meta-package)
+        ->borrar los manuales -> rm -rf /usr/share/man
+     
    COMPROBAR USO DE MEMORIA CON df -h.
    
    
