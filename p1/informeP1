@@ -122,9 +122,38 @@ h)En el apartado d) se ha familiarizado con los services que corren en su sistem
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 i) Diseñe y configure un pequeño “script” y defina la correspondiente unidad de tipo service para  que se ejecute en el proceso de botado de su máquina
     
-        En este caso se nos pidió un script que hiciese un backup de algo.
-        
-    
+        En este caso se nos pidió un script que hiciese un backup de algo, decidimos hacer un backup del directorio /home/lsi
+        (todo se ejecuta como superusuario)
+        1.CREAMOS LOS DOS FICHERO, EL SCRIPT Y EL SERVICE QUE USARÁ EL SCRIPT:
+        -nano backup.sh:
+                #!/bin/bash
+	        echo "Crea una copia de seguridad de los discos del sistema"
+                tar -czvf /backuphome.tar.gz /home/lsi
+         -nano /etc/systemd/system/backuphome.service:
+                [Unit]
+		Description= Crea una copia del directorio /home/lsi
+		After=  multi-user.target
+		StartLimitIntervalSec=1
+		[Service]
+		Type=simple
+		Restart=on-failure
+		User=lsi
+		ExecStart=/home/lsi/backup.sh
+		[Install]
+		WantedBy=multi-user.target
+	2.LE DAMOS PERMISOS DE EJECUCIÓN A AMBOS:
+	-chmod +x backup.sh
+	-chmod +x /etc/systemd/system/backuphome.service
+	3.EJECUTAMOS SCRIPT PARA QUE EL TAR.GZ SEA CREADO, Y LE DAMOS PERMISOS PARA QUE EL SERVICE LO PUEDA LEER Y MODIFICAR.
+	-./backup.sh
+	-chmod +rw  /backuphome.tar.gz
+	4.REINICIAMOS SERVICIOS, HABILITAMOS Y REBOOTEAMOS SISTEMA PARA QUE SE PUEDA UTILIZAR.
+	-systemctl daemon-reload(reiniciar servicios)
+	-systemctl start backuphome.service
+	-systemctl enable backuphome.service
+	-reboot
+	5.COMPROBAMOS QUE FUNCIONA.
+	-systemctl status backuphome.service 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 j) Identifique las conexiones de red abiertas a y desde su equipo.
 
@@ -174,7 +203,7 @@ l) Un primer nivel de filtrado de servicios los constituyen los tcp-wrappers. Co
 		sshd: 127.0.0.1, 10.11.49.97, 10.11.51.97: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
 
 	# vpn udc:
-		sshd: 10.30. spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
+		sshd: 10.30.: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
 
 	# eduroam:
 		sshd: 10.20.32.0/255.255.248.0: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
@@ -184,7 +213,6 @@ l) Un primer nivel de filtrado de servicios los constituyen los tcp-wrappers. Co
            spawn \`bin/date\`\: intento de conexión de %a a %A \[DENEGADO\] >> /var/log/deny.log
            
            
-     (tuve un problemita y tuvo que arreglarlo mi compa)
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 m) Existen múltiples paquetes para la gestión de logs (syslog, syslog-ng, rsyslog). Utilizando el  rsyslog pruebe su sistema de log local.
 
@@ -279,14 +307,15 @@ b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cl
 c)Haga todo tipo de propuestas sobre los siguientes aspectos.: ¿Qué problemas de seguridad identifica en los dos apartados anteriores?. ¿Cómo podría solucionar los problemas  identificados? 
 
       -NTP se basa en  User Datagram Protocol (UDP) sobre el puerto 123, por lo que es un claro contendiente a un ataque de denegación de servicio. (Ataque DoS)
+      -los mensajes del log van sin cifrar por lo que cualquiera puede leer su contenido mediante la técnica del Man in the Middle(MiM).
+      -Si alguien consigue acceso al servidor de logs podría ver las ips de todas las máquinas clientes y realizar todo tipo de fechorías con estos datos. 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 d)En la plataforma de virtualización corren, entre otros equipos, más de 200 máquinas virtuales  para LSI. Como los recursos son limitados, y el disco duro también, identifique todas aquellas  acciones que pueda hacer para reducir el espacio de disco ocupado. 
 
 	->OPCIONES QUE YO VEO VIABLES-> borrar idiomas,manuales, apt inutiles.... (añadir más)
 	
 	
-   
-   
+   COMPROBAR USO DE MEMORIA CON df -h.
    
    
    
