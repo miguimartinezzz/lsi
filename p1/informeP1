@@ -388,7 +388,7 @@ b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cl
 	*.* ?remote
 	& stop
 
-	-AllowedSender TCP 127.0.0.1, 10.11.49.97 -> server solo acepta mensajes del compañero
+	-$AllowedSender TCP, 127.0.0.1, 10.11.49.97 -> server solo acepta mensajes del compañero
 	-añadir al cliente en hosts.allow: rsyslogd: 10.11.49.97
   CLIENTE:
 	-añadir al final del fichero: 
@@ -460,6 +460,7 @@ d)En la plataforma de virtualización corren, entre otros equipos, más de 200 m
 		ii  linux-image-5.10.0-18-amd64           5.10.140-1                       amd64        Linux 5.10 for 64-bit PCs (signed)
 		ii  linux-image-amd64                     5.10.140-1                       amd64        Linux for 64-bit PCs (meta-package)
         ->borrar los manuales -> rm -rf /usr/share/man
+        ->borrar idiomas: no lo hicimos pero se podria hacer utilizando localepurge .
      
    COMPROBAR USO DE MEMORIA CON df -h.
    
