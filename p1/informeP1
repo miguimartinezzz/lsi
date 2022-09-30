@@ -19,6 +19,12 @@ a)Configure su máquina virtual de laboratorio con los datos proporcionados por 
 	netmask 255.255.254.0
 	broadcast 10.11.51.255
 	network 10.11.50.0
+	
+     -Hosts: traduce hosts a ips. Podemos usarlo para testear websites de manera local.
+     -resolv.conf: el resolver configura el DNS, de este archivo saca información.
+     -nsswitch.conf: configura de donde obtienen la información algunos servicios especiales.	
+     -sources.list: lista de fuentes de datos de APT -> contiene repositorios utilizados para actualizar.
+     -/etc/sudoers: lista con los usuarios con privilegios y cuales tienen.
       	
 	
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -99,7 +105,6 @@ h)En el apartado d) se ha familiarizado con los services que corren en su sistem
 	-listar todas las dependencias de un servicio: systemctl list-dependencies bluetooth
 	-ver servicios que se usaran despues de arrancar servicios: systemctl list-dependencies --before bluetooth
 	-Ver los servicios y unidades que tienen que estar activos antes de ejecutar un servicio: systemctl list-dependencies --after bluetooth
-	-servicios: https://geekland.eu/systemctl-administrar-servicios-linux/
 	-ver que servicios son los que mas tardan en arrancar: systemd-analyze blame
 	-DESHABILITAR SERVICIOS: sudo systemctl disable (servicio)
 	-journald: encargado de recolectar y almacenar los mensajes del kernel y otras fuentes journalctl-> interpreta los logs, 
