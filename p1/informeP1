@@ -273,7 +273,7 @@ n)Configure IPv6 6to4 y pruebe ping6 y ssh sobre dicho protocolo. ¿Qué hace su
 	net.ipv6.conf.default.disable_ipv6=1
 	net.ipv6.conf.lo.disable_ipv6=1
    
-   sysctl -p
+  para aplicar cambios : sysctl -p
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------    
 ==================================================================================PARTE COOPERATIVA=======================================================================================================
 
@@ -463,7 +463,17 @@ d)En la plataforma de virtualización corren, entre otros equipos, más de 200 m
         ->borrar idiomas: no lo hicimos pero se podria hacer utilizando localepurge .
      
    COMPROBAR USO DE MEMORIA CON df -h.
-   
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ERRORES QUE APARECEN CON : journalctl -b |grep err /grep fail
+
+-sep 30 14:47:06 debian ntpd[790]: bind(22) AF_INET6 fe80::250:56ff:fe97:4966%2#123 flags 0x11 failed: Cannot assign requested address
+sep 30 14:47:06 debian ntpd[790]: failed to init interface for address fe80::250:56ff:fe97:4966%2
+sep 30 14:47:06 debian ntpd[790]: bind(22) AF_INET6 fe80::250:56ff:fe97:e16f%3#123 flags 0x11 failed: Cannot assign requested address
+sep 30 14:47:06 debian ntpd[790]: failed to init interface for address fe80::250:56ff:fe97:e16f%3
+ SOLUCION: disable al ntp y cuando lo pases pues lo habilitas.
+           TAMBIEN PUEDES DESACTIVAR IPV6 Y DESAPARECE.
+ 
+
    
    
    
