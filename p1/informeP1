@@ -45,8 +45,10 @@ b) ¿Qué distro y versión tiene la máquina inicialmente entregada?. Actualice
 	    ->apt upgrade
 	    ->reboot     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-c) Identifique la secuencia completa de arranque de una máquina basada en la distribución de  referencia (desde la pulsación del botón de arranque hasta la pantalla de login).
-   ¿Qué target por  defecto tiene su máquina?. ¿Cómo podría cambiar el target de arranque?. ¿Qué targets tiene su  sistema y en qué estado se encuentran?. ¿Y los services?. 
+c) Identifique la secuencia completa de arranque de una máquina basada en la distribución de  referencia (desde la pulsación del botón de arranque hasta 
+   la pantalla de login).
+   ¿Qué target por  defecto tiene su máquina?. ¿Cómo podría cambiar el target de arranque?. ¿Qué targets tiene su  sistema y en qué estado se encuentran?. 
+   ¿Y los services?. 
    Obtenga la relación de servicios de su  sistema y su estado. ¿Qué otro tipo de unidades existen?. 
 	
 	->ver target activo por defecto: systemctl get-default --> GRAPHICAL.TARGET
@@ -60,15 +62,16 @@ d) Determine los tiempos aproximados de botado de su kernel y del userspace. Obt
 	->mirar tiempos de arranque: systemd-analyze
 	->mirar que servicios ralentizan: systemd-analyze blame
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-e) Investigue si alguno de los servicios del sistema falla. Pruebe algunas de las opciones del sistema  de registro journald. Obtenga toda la información journald 
-   referente al proceso de botado de la  máquina. ¿Qué hace el systemd-timesyncd?. 
+e) Investigue si alguno de los servicios del sistema falla. Pruebe algunas de las opciones del sistema  de registro journald. Obtenga toda la información 
+   journald referente al proceso de botado de la  máquina. ¿Qué hace el systemd-timesyncd?. 
 
         ->saber qué servicios fallan en el arranque de la maquina: systemctl list-unit-files --state=failed  //journalctl -p err -b
         ->journalctl -u SERVICE muestra el log de un servicio
 	->journalctl -b muestra el log del boot actual.
 	->systemd-timesyncd es un servicio del sistema que se usa para sincronizar el reloj local del sistema con un servidor NTP remoto
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-f) Identifique y cambie los principales parámetros de su segundo interface de red (ens34). Configure un segundo interface lógico. Al terminar, déjelo como estaba.
+f) Identifique y cambie los principales parámetros de su segundo interface de red (ens34). Configure un segundo interface lógico. Al terminar, déjelo como 
+   estaba.
      VALORES ENS34:
         ens34: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 10.11.51.98  netmask 255.255.254.0  broadcast 10.11.51.255
@@ -212,7 +215,8 @@ para solucionarlo: apt purge *pulseaudio* -> con pipeware lo msmo
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 l) Un primer nivel de filtrado de servicios los constituyen los tcp-wrappers. Configure el tcp wrapper de su sistema 
    (basado en los ficheros hosts.allow y hosts.deny) para permitir  conexiones SSH a un determinado conjunto de IPs y denegar al resto. 
-   ¿Qué política general de  filtrado ha aplicado?. ¿Es lo mismo el tcp-wrapper que un firewall?. Procure en este proceso no  perder conectividad con su máquina.
+   ¿Qué política general de  filtrado ha aplicado?. ¿Es lo mismo el tcp-wrapper que un firewall?. Procure en este proceso no  perder conectividad 
+    con su máquina.
     No se olvide que trabaja contra ella en remoto por ssh. 
    
    
@@ -381,11 +385,14 @@ remote
 Hace referencia al peer definido en el archivo de configuración /etc/ntp.conf. Además va precedido de uno de los siguientes símbolos:
 
     *: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local.
-    #: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local, a pesar de que su distancia excede el valor máximo.
-    o: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local. Esta fuente es de tipo Pulso Por Segundo.
+    #: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local, 
+       a pesar de que su distancia excede el valor máximo.
+    o: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local. 
+       Esta fuente es de tipo Pulso Por Segundo.
     +: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local.
     x: fuente deshechada.
-    .: fuente seleccionada, del final de la lista de candidatos, para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local.
+    .: fuente seleccionada, del final de la lista de candidatos, para incluir sus datos en el cálculo de promedio 
+       ponderado para ajustar el reloj local.
     –: fuente deshechada por el algoritmo.
     blank: fuente deshechada por estrato excesivo.
 
@@ -407,23 +414,31 @@ Indica el tipo de sincronización, el cual puede ser:
 when
 
 Indica el número de segundos transcurridos desde el último contacto.
+
 poll
 
 Indica el intervalo de contacto.
+
 reach
 
-Es un registro de cambio que se utiliza para determinar el estado de accesibilidad del peer. Un peer se considera accesible si al menos un bit en este registro está establecido en 1.
+Es un registro de cambio que se utiliza para determinar el estado de accesibilidad del peer. Un peer se considera accesible si al menos 
+un bit en este registro está establecido en 1.
+
 delay
 
 Indica el tiempo de ida y vuelta en segundos desde que el cliente inicia la comunicación hasta que recibe la respuesta.
 
-Es importante tener en cuenta que este valor puede ser positivo, o incluso negativo, dependiendo de la precisión de los relojes y la acumulación de los errores de sesgo.
+Es importante tener en cuenta que este valor puede ser positivo, o incluso negativo, dependiendo de la precisión de los relojes y la 
+acumulación de los errores de sesgo.
+
 offset
 
 Indica la diferencia de tiempo, en segundos, entre el reloj del cliente y el de la fuente.
+
 jitter (dispersion)
 
-Indica el error máximo, en segundos, del reloj del peer en relación al reloj local y la ruta de red que los separa. Solo son posibles valores mayores que cero.
+Indica el error máximo, en segundos, del reloj del peer en relación al reloj local y la ruta de red que los separa. 
+Solo son posibles valores mayores que cero.
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cliente de logs:
    
@@ -483,9 +498,11 @@ b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cl
 c)Haga todo tipo de propuestas sobre los siguientes aspectos.: ¿Qué problemas de seguridad identifica en los dos apartados anteriores?. 
  ¿Cómo podría solucionar los problemas  identificados? 
 
-      -NTP se basa en  User Datagram Protocol (UDP) sobre el puerto 123, por lo que es un claro contendiente a un ataque de denegación de servicio. (Ataque DoS)
+      -NTP se basa en  User Datagram Protocol (UDP) sobre el puerto 123, por lo que es un claro contendiente a un ataque de denegación de servicio. 
+       (Ataque DoS)
       -los mensajes del log van sin cifrar por lo que cualquiera puede leer su contenido mediante la técnica del Man in the Middle(MiM).
-      -Si alguien consigue acceso al servidor de logs podría ver las ips de todas las máquinas clientes y realizar todo tipo de fechorías con estos datos.
+      -Si alguien consigue acceso al servidor de logs podría ver las ips de todas las máquinas clientes y realizar todo tipo de fechorías 
+       con estos datos.
       
       SOLUCIONES:
        -para solucionar el primer y el tercer supuesto podríamos recurrir a un firewall para evitar accesos y solicitudes de IPs no autorizadas,
