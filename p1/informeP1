@@ -1,5 +1,5 @@
 
-                                                      PRACTICA 1 DE LEGISLACIÓN Y SGEGURIDAD INFORMÁTICA. HOJA DE RUTA.
+                                                      PRACTICA 1 DE LEGISLACIÓN Y SGEGURIDAD INFORMÁTICA. HOJA DE RUTA.        NOTA DEFENSA:
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 a)Configure su máquina virtual de laboratorio con los datos proporcionados por el profesor. Analice los ficheros básicos de configuración (interfaces, hosts, 
@@ -114,15 +114,11 @@ h)En el apartado d) se ha familiarizado con los services que corren en su sistem
 	SERVICIOS QUE HE DESHABILITADO:
       ---------------------------------------------------------------------------------------------------------------------------------
       	-ANTES DE DESHABILITAR: 11.57s
-	-bluetooth.service -> segundo a desactivar: 
+	-bluetooth.service 
 	-ModemManager.service
 	-wpa_supplicant.service
-	-NetworkManager.service -> primero a desactivar: 9.802s: $ systemd-analyze
-                                                                   Startup finished in 3.206s (kernel) + 6.614s (userspace) = 9.820s 
-                                                                   multi-user.target reached after 6.585s in userspace
-
+	-NetworkManager.service 
 	-avahi-daemon.service
-	-open-vm-tools.service(no lo quite)
 	-cups.service
 	-cups-browsed.service
        -------------------------------------------------------------------------------------------------------------------------------
@@ -376,6 +372,58 @@ restrict ::1
 #fudge 10.10.102.119 stratum
 #restrict 10.11.49.97 mask 255.255.255.255 noquery nopeer
 
+
+=========================================================
+SALIDA NTPQ
+=========================================================
+remote
+
+Hace referencia al peer definido en el archivo de configuración /etc/ntp.conf. Además va precedido de uno de los siguientes símbolos:
+
+    *: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local.
+    #: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local, a pesar de que su distancia excede el valor máximo.
+    o: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local. Esta fuente es de tipo Pulso Por Segundo.
+    +: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local.
+    x: fuente deshechada.
+    .: fuente seleccionada, del final de la lista de candidatos, para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local.
+    –: fuente deshechada por el algoritmo.
+    blank: fuente deshechada por estrato excesivo.
+
+refid
+
+Indica la fuente de sincronización horaria del peer.
+st (stratum)
+
+Indica el estrato o nivel del peer.
+t (type)
+
+Indica el tipo de sincronización, el cual puede ser:
+
+    l: local (como por ejemplo WWVB o GPS).
+    u: unicast (el más común).
+    m: multicast.
+    –: desconocido.
+
+when
+
+Indica el número de segundos transcurridos desde el último contacto.
+poll
+
+Indica el intervalo de contacto.
+reach
+
+Es un registro de cambio que se utiliza para determinar el estado de accesibilidad del peer. Un peer se considera accesible si al menos un bit en este registro está establecido en 1.
+delay
+
+Indica el tiempo de ida y vuelta en segundos desde que el cliente inicia la comunicación hasta que recibe la respuesta.
+
+Es importante tener en cuenta que este valor puede ser positivo, o incluso negativo, dependiendo de la precisión de los relojes y la acumulación de los errores de sesgo.
+offset
+
+Indica la diferencia de tiempo, en segundos, entre el reloj del cliente y el de la fuente.
+jitter (dispersion)
+
+Indica el error máximo, en segundos, del reloj del peer en relación al reloj local y la ruta de red que los separa. Solo son posibles valores mayores que cero.
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cliente de logs:
    
@@ -472,6 +520,8 @@ sep 30 14:47:06 debian ntpd[790]: bind(22) AF_INET6 fe80::250:56ff:fe97:e16f%3#1
 sep 30 14:47:06 debian ntpd[790]: failed to init interface for address fe80::250:56ff:fe97:e16f%3
  SOLUCION: disable al ntp y cuando lo pases pues lo habilitas.
            TAMBIEN PUEDES DESACTIVAR IPV6 Y DESAPARECE.
+           
+           MEJOR: DESHABILITAR NTP Y CUANDO ARRANQUE HACER systemctl enable ntp.service y systemctl restart ntp.service
  
 
    
