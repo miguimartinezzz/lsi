@@ -1,5 +1,5 @@
 
-                                                      PRACTICA 1 DE LEGISLACIÓN Y SGEGURIDAD INFORMÁTICA. HOJA DE RUTA.        NOTA DEFENSA:
+                                                      PRACTICA 1 DE LEGISLACIÓN Y SGEGURIDAD INFORMÁTICA. HOJA DE RUTA.        
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 a)Configure su máquina virtual de laboratorio con los datos proporcionados por el profesor. Analice los ficheros básicos de configuración (interfaces, hosts, 
@@ -61,6 +61,9 @@ c) Identifique la secuencia completa de arranque de una máquina basada en la di
 d) Determine los tiempos aproximados de botado de su kernel y del userspace. Obtenga la relación  de los tiempos de ejecución de los services de su sistema.  
 	->mirar tiempos de arranque: systemd-analyze
 	->mirar que servicios ralentizan: systemd-analyze blame
+	-> journalctl -xe | grep fail
+        ->journalctl -p err -b              ERRORES
+
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 e) Investigue si alguno de los servicios del sistema falla. Pruebe algunas de las opciones del sistema  de registro journald. Obtenga toda la información 
    journald referente al proceso de botado de la  máquina. ¿Qué hace el systemd-timesyncd?. 
@@ -84,7 +87,7 @@ f) Identifique y cambie los principales parámetros de su segundo interface de r
         device interrupt 16  base 0x2080  
 
 MODIFICAR ENS34 
-          -ifconfig ens34:0 10.11.52.0  netmask 255.255.254.0 -> NO PERSISTENTE
+          -ifconfig ens34:0 10.11.52.98  netmask 255.255.254.0 -> NO PERSISTENTE
           -PERSISTENTE -> /etc/network/interfaces:
                  ens34:0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
                  inet 10.11.52.0  netmask 255.255.254.0  broadcast 10.11.52.255
@@ -97,7 +100,7 @@ PARA TIRARLA: ifconfig ens34:0 down.
 g) ¿Qué rutas (routing) están definidas en su sistema?. Incluya una nueva ruta estática a una  determinada red. 
 
      rutas definidas ip route show  (route -n -> tabla enrutamiento)
-     Añadir ruta: ip route add default {NETWORK/MASK} via {NETWORK} 
+     Añadir ruta: ip route add 10.11.52.0/23 via 10.11.50.1 dev ens34
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 h)En el apartado d) se ha familiarizado con los services que corren en su sistema. ¿Son necesarios  todos ellos?. 
   Si identifica servicios no necesarios, proceda adecuadamente. Una limpieza no le  vendrá mal a su equipo, 
@@ -124,6 +127,8 @@ h)En el apartado d) se ha familiarizado con los services que corren en su sistem
 	-avahi-daemon.service
 	-cups.service
 	-cups-browsed.service
+	-exim4.service -> servicio de correo, me dio 45 segundos una vez.
+
        -------------------------------------------------------------------------------------------------------------------------------
 
 	-systemd-analyze critical-chain -> orden de arranque y servicios que retrasan
@@ -145,7 +150,7 @@ i) Diseñe y configure un pequeño “script” y defina la correspondiente unid
          -nano /etc/systemd/system/backuphome.service:
                 [Unit]
 		Description= Crea una copia del directorio /home/lsi
-		After=  multi-user.target
+		After=  local-fs.target
 		StartLimitIntervalSec=1
 		[Service]
 		Type=simple
@@ -194,7 +199,7 @@ k) Nuestro sistema es el encargado de gestionar la CPU, memoria, red, etc., como
 APARTADO ESPECIAL: SOLUCIONAR ERRORES
 -ERROR:     journalctl -p err -b
         -- Journal begins at Mon 2022-09-26 18:27:30 CEST, ends at Mon 2022-09-26 19:24>
-        sep 26 18:27:31 debian kernel: piix4_smbus 0000:00:07.3: SMBus Host Controller >
+        sep 26 18:27:31 debian kernel: piix4_smbus 0000:00:07.3: SMBus Host Controller > -> este error resta 0.25
 	sep 26 18:27:59 debian pulseaudio[746]: GetManagedObjects() failed: org.freedes>
 	sep 26 18:27:59 debian pipewire[744]: Failed to receive portal pid: org.freedes>
 	sep 26 19:23:58 debian pipewire[900]: Failed to receive portal pid: org.freedes>
@@ -226,13 +231,13 @@ l) Un primer nivel de filtrado de servicios los constituyen los tcp-wrappers. Co
 		sshd: 127.0.0.1, 10.11.49.97, 10.11.51.97: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
 
 	# vpn udc:
-		sshd: 10.30.: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
+		sshd: 10.30.10.0/255.255.248.0: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
 
 	# eduroam:
 		sshd: 10.20.32.0/255.255.248.0: spawn echo \`bin/date\`\: intento de conexión de %a a %A \[PERMITIDO\] >> /var/log/allow.log
 
    nano /etc/hosts.deny
-        all:all twist \
+        all:all
            spawn \`bin/date\`\: intento de conexión de %a a %A \[DENEGADO\] >> /var/log/deny.log
            
            
@@ -290,7 +295,6 @@ a)En colaboración con otro alumno de prácticas, configure un servidor y un cli
  -PARTE SERVIDOR:
             -comentar pools de datos.
             https://www.tek-tips.com/viewthread.cfm?qid=336666
-            -añadir cliente en hosts.allow: 10.11.49.97 (yo soy servidor)
  -PARTE CLIENTE:
 	    -comentar pools y añadir ip del servidor
 	    
@@ -373,72 +377,38 @@ restrict ::1
 #disable auth
 #broadcastclient
 #server 10.11.49.97 minpoll 4 prefer
-#fudge 10.10.102.119 stratum
+#fudge 127.127.1.0 stratum
 #restrict 10.11.49.97 mask 255.255.255.255 noquery nopeer
 
 
 =========================================================
 SALIDA NTPQ
 =========================================================
-remote
+Remote: El nombre de host
 
-Hace referencia al peer definido en el archivo de configuración /etc/ntp.conf. Además va precedido de uno de los siguientes símbolos:
+Refid: Un indicador informativo que dice de dónde obtiene la hora esta fuente de tiempo.
 
-    *: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local.
-    #: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local, 
-       a pesar de que su distancia excede el valor máximo.
-    o: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local. 
-       Esta fuente es de tipo Pulso Por Segundo.
-    +: fuente seleccionada para incluir sus datos en el cálculo de promedio ponderado para ajustar el reloj local.
-    x: fuente deshechada.
-    .: fuente seleccionada, del final de la lista de candidatos, para incluir sus datos en el cálculo de promedio 
-       ponderado para ajustar el reloj local.
-    –: fuente deshechada por el algoritmo.
-    blank: fuente deshechada por estrato excesivo.
+t: El tipo de la fuente de tiempo, por ejemplo, “l” para un refclock de hardware local, o “u” para un servidor NTP ascendente 
+al que se accede a través de paquetes de datos unicast.
 
-refid
+When: El tiempo después del último evento de sondeo. Cuando se alcanza el valor de poll entonces se produce la siguiente acción de sondeo.
 
-Indica la fuente de sincronización horaria del peer.
-st (stratum)
+Poll:  El intervalo de sondeo actual, en segundos
 
-Indica el estrato o nivel del peer.
-t (type)
+Stratum (St):  es una representación de la jerarquía de servidores de tiempo en una red NTP, donde el nivel de Stratum (0-15) 
+indica la distancia del dispositivo al reloj de referencia. El estrato 0 significa que un dispositivo está conectado directamente a, 
+por ejemplo, una antena GPS. Sin embargo, los dispositivos de estrato 0 no pueden distribuir la hora a través de una red directamente, 
+por lo que deben estar vinculados a un servidor horario de estrato 1 que distribuirá la hora a los servidores o clientes de estrato 2, 
+y así sucesivamente. Cuanto más alto sea el número de Stratum, más se degrada la precisión y la estabilidad de la hora. 
+Es 16 si la fuente no está alcanzable o no está sincronizada
 
-Indica el tipo de sincronización, el cual puede ser:
+Reach: secuencia de 8 bits de caracter booleano representados en octal donde 1 significa conexión exitosa y 0 no.
+cada vez que se realiza una consulta, los valores existentes se desplazan a la izquierda y el nuevo entra por la derecha.
+asi pues , el maximo es 377 = 11111111 -> últimas 8 peticiones son exitosas
 
-    l: local (como por ejemplo WWVB o GPS).
-    u: unicast (el más común).
-    m: multicast.
-    –: desconocido.
-
-when
-
-Indica el número de segundos transcurridos desde el último contacto.
-
-poll
-
-Indica el intervalo de contacto.
-
-reach
-
-Es un registro de cambio que se utiliza para determinar el estado de accesibilidad del peer. Un peer se considera accesible si al menos 
-un bit en este registro está establecido en 1.
-
-delay
-
-Indica el tiempo de ida y vuelta en segundos desde que el cliente inicia la comunicación hasta que recibe la respuesta.
-
-Es importante tener en cuenta que este valor puede ser positivo, o incluso negativo, dependiendo de la precisión de los relojes y la 
-acumulación de los errores de sesgo.
-
-offset
-
-Indica la diferencia de tiempo, en segundos, entre el reloj del cliente y el de la fuente.
-
-jitter (dispersion)
-
-Indica el error máximo, en segundos, del reloj del peer en relación al reloj local y la ruta de red que los separa. 
-Solo son posibles valores mayores que cero.
+Delay: El retraso medio de los paquetes, en milisegundos. Es el tiempo medio de ejecución necesario para enviar una solicitud de lectura a 
+la fuente de tiempo y recibir la respuesta de esa fuente.
+Offset: El desplazamiento del tiempo medio, en milisegundos.
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cliente de logs:
    
@@ -446,12 +416,12 @@ b)Cruzando los dos equipos anteriores, configure con rsyslog un servidor y un cl
    
   SERVIDOR:
         -descomentar las lineas de tcp para permitirlo
-        -#TEMPLATE PARA GUARDAR MENSAJES
-	$template remote, "/var/log/rsyslog-server/%fromhost-ip%/%programname%.log"
-	*.* ?remote
-	& stop
+        #TEMPLATE PARA GUARDAR MENSAJES
+        $template remote, "/var/log/rsyslog-server/%fromhost-ip%/%programname%.log"
+        if $inputname == "imtcp" then ?remote
+        &stop
 
-	-$AllowedSender TCP, 127.0.0.1, 10.11.49.97 -> server solo acepta mensajes del compañero
+	-$AllowedSender UDP, 127.0.0.1, 10.11.49.97 -> server solo acepta mensajes del compañero
 	-añadir al cliente en hosts.allow: rsyslogd: 10.11.49.97
   CLIENTE:
 	-añadir al final del fichero: 
@@ -538,13 +508,21 @@ sep 30 14:47:06 debian ntpd[790]: failed to init interface for address fe80::250
  SOLUCION: disable al ntp y cuando lo pases pues lo habilitas.
            TAMBIEN PUEDES DESACTIVAR IPV6 Y DESAPARECE.
            
-           MEJOR: DESHABILITAR NTP Y CUANDO ARRANQUE HACER systemctl enable ntp.service y systemctl restart ntp.service
+           MEJOR: DESHABILITAR NTP Y CUANDO ARRANQUE HACER systemctl enable ntp.service y systemctl restart ntp.service (systemctl status ntp.service) 
  
 
    
    
    
-   
+ERRORES PRIMERA PRACTICA -> NO APTA
+
+-en el hosts allow -> IP de la VPN // NTP Y SYSLOG NO ESTAR ->UDP --> hecho
+-en el hosts deny -> TWIST NO HACE FALTA                          --> hecho
+-el ntp.conf -> hacerlo de nuevo                                  --> ¿hecho?
+-service -> cambiar target de arranque y no se si algo más   --> ¿hecho?
+-solucionar errores de booteado                              --> hecho(los de ntp pues desactivarlo y bootear).
+-rsyslog -> no se si hace falta algo
+
    
    
    
