@@ -469,12 +469,49 @@ p) Trate de sacar un perfil de los principales sistemas que conviven en su red d
    `
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 q) Realice algún ataque de “password guessing” contra su servidor ssh y compruebe que el analizador de logs reporta las correspondientes alarmas.
+
+	Ataque
+		Atacante:
+			-medusa -h 10.11.49.91 -u lsi -P passwords.txt -M ssh -f
+		Victima
+			-tail -f /var/log/auth.log | grep 'sshd'Analizador de logs
+			-apt install logcheck
+		Modificar en /etc/cron.d/logcheck
+			-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+			-MAILTO=lsi@localhost
+			-@reboot logcheck if [ -x /usr/sbin/logcheck ]; then nice -n10
+		         /usr/sbin/logcheck -R; fi
+			 0 8 * * * logcheck if [ -x /usr/sbin/logcheck ]; then nice -n10
+			 /usr/sbin/logcheck; fi # Envia un correo todos los días a las 8 de la mañana
+			 # EOF
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 r) Reportar alarmas está muy bien, pero no estaría mejor un sistema activo, en lugar de uno pasivo. Configure algún sistema activo, por ejemplo OSSEC, y pruebe su
   funcionamiento ante un “password guessing”.
- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ 
+  
+          Instalación
+		-sudo apt -y install wget git vim unzip make gcc build-essential php
+		 php-cli php-common libapache2-mod-php apache2-utils inotify-tools
+		 libpcre2-dev zlib1g-dev libz-dev libssl-dev libevent-dev build-
+		 essential libsystemd-dev
+		-export VER="3.7.0" # Comprobar en la web si es la ultima version y cambiarla si es necesario
+		-wget https://github.com/ossec/ossec-hids/archive/${VER}.tar.gz
+		-cd ossec-hids-${VER}
+		-sudo sh install.sh # Instalar modo local y darle enter a todo menos al correo electronico (lsi@localhost)
+          Defensa
+          Comprobar si el ataque ha sido parado:
+		-cat /etc/host.deny
+		-iptables -L
+          Desbanear
+		-/var/ossec/active-response/bin/firewall-drop.sh delete - 10.11.48.X
+		-/var/ossec/active-response/bin/host-deny.sh delete - 10.11.48.X
+		-/var/ossec/bin/ossec-control restart ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ 
 s) Supongamos que una máquina ha sido comprometida y disponemos de un fichero con sus mensajes de log. Procese dicho fichero con OSSEC para tratar de localizar evidencias
    de lo acontecido (“post mortem”). Muestre las alertas detectadas con su grado de criticidad, así como un resumen de las mismas.
+   
+   # Muestra las distintas alertas generadas a partir del log
+	-cat /var/log/auth.log | /var/ossec/bin/ossec-logtest -a
+   # Muestra un resumen de las alertas
+	-cat /var/log/auth.log | /var/ossec/bin/ossec-logtest -a | /var/ossec/bin/ossec-reportd
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
    
    
