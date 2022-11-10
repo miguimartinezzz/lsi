@@ -93,13 +93,15 @@ d) Obtenga la relación de las direcciones IPv6 de su segmento.
      Nota: si hacemos arp -a nos mostrará las ipv4 y sus mac.
    
    ->ettercap: -ettercap -Tq (pulsa 6 al terminar)
+   
+   -> atk-alive6 ens33
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 e) Obtenga el tráfico de entrada y salida legítimo de su interface de red ens33 e investigue
    los servicios, conexiones y protocolos involucrados.
    
    ettercap -Tpq -i ens33 -w 
 
-   O tcpdump -w apartadoE -i ens33
+   tcpdump -w apartadoE -i ens33
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
 f) Mediante arpspoofing entre una máquina objetivo (víctima) y el router del laboratorio
@@ -210,7 +212,7 @@ h) Haga un MITM en IPv6 y visualice la paquetería.
 	This is simple as it is. First turn on IPv6 forwarding and run parasite.
 
 	Command: echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
-	Command: parasite6 eth0<replace with your interface> -l
+	atk6-parasite6 ens33 -l
 	
 	SPOOFEADO EJECUTA:
 	ping6 ff02::1
@@ -241,7 +243,7 @@ j) Pruebe distintas técnicas de host discovey, port scanning y OS fingerprintin
 	Host discovery:
 
 	  nmap -sP 10.11.48.0/24  -> se lo hace a todas
-	  nmap -SP 10.11.48.1-15  -> a las maquinas originales
+	  nmap -sP 10.11.48.1-15  -> a las maquinas originales
 
 	Port scanning:
 
@@ -487,7 +489,9 @@ q) Realice algún ataque de “password guessing” contra su servidor ssh y com
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 r) Reportar alarmas está muy bien, pero no estaría mejor un sistema activo, en lugar de uno pasivo. Configure algún sistema activo, por ejemplo OSSEC, y pruebe su
   funcionamiento ante un “password guessing”.
-  
+          
+          Encender ossec:
+                 -/var/ossec/bin/ossec-control start
           Instalación
 		-sudo apt -y install wget git vim unzip make gcc build-essential php
 		 php-cli php-common libapache2-mod-php apache2-utils inotify-tools
@@ -513,6 +517,7 @@ s) Supongamos que una máquina ha sido comprometida y disponemos de un fichero c
    # Muestra un resumen de las alertas
 	-cat /var/log/auth.log | /var/ossec/bin/ossec-logtest -a | /var/ossec/bin/ossec-reportd
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
+   
    
    
    
