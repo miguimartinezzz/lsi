@@ -1,0 +1,335 @@
+
+
+
+a)Para quitar al compañero de los known_hosts hay que borrar: cat /dev/null > ~/.ssh/known_hosts
+
+Otros dos que hay:
+
+cat /dev/null > .ssh/known_hosts
+cat /dev/null > /etc/ssh/ssh_known_hosts
+
+
+
+
+~/.ssh/known_hosts es el fichero 
+
+pico /etc/ssh/ssh_known_hosts
+
+[*] ssh -v lsi@10.11.49.132 -> proceso que se realiza
+
+[*] Metemos la clave de nuestro compañero en nuestro fichero ssh_known_hosts -> ssh-keyscan 10.11.49.132 >> /etc/ssh/ssh_known_hosts
+
+[*] Podemos borrar a nuestro compañero con: cat /dev/null > /etc/ssh/ssh_known_hosts
+
+Ya no muestra un mensaje de fingerprinting ya que su clave publica es conocida por nuestra maquina
+
+
+
+b) Para ver los cifrados disponibles por SSH: ssh -Q cipher
+3des-cbc
+aes128-cbc
+aes192-cbc
+aes256-cbc
+rijndael-cbc@lysator.liu.se
+aes128-ctr
+aes192-ctr
+aes256-ctr
+aes128-gcm@openssh.com
+aes256-gcm@openssh.com
+chacha20-poly1305@openssh.com
+
+[*] Para copiar un fichero al compañero usamos SCP (va por Secure Shell(SSH)): scp -o Cipher=rijndael-cbc@lysator.liu.se /home/lsi/copy.txt lsi@10.11.49.132:/home/lsi
+En Cipher= usamos el algoritmo de cifrado que nosotros queramos de la lista de arriba.
+
+
+
+c)
+
+Generamos el par de claves RSA (o DSA): ssh-keygen -t rsa
+
+La clave publica y privada se guarda respectivamente en: ~/.ssh/id_rsa.pub y ~/.ssh/id_rsa
+
+Creamos authorized_keys en HOME en la maquina a la que me quiero conectar con autenticacion de clave publica:
+ 
+ -mkdir .ssh
+ -chmod 700 .ssh/
+ -touch .ssh/authorized_keys
+ -chmod 644 .ssh/authorized_keys
+
+Mi compañero mete mi pub key en su .ssh/authorized_keys, o lo hago yo: cat ~/.ssh/id_rsa.pub | ssh lsi@10.11.49.132 "cat >> .ssh/authorized_keys"
+
+Revisar en la maquina de mi compañero su fichero /etc/ssh/sshd_config que esté así:
+
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+
+Si se quiere usar DSA en vez de RSA hay que comentar esta linea: RSAAuthentication yes
+
+
+Fuentes: https://www.linuxito.com/gnu-linux/nivel-alto/459-como-autenticar-con-clave-publica-en-ssh
+
+
+
+d) ssh -P -L 10000:10.11.49.122:80 lsi@10.11.49.132
+
+Redirigimos la aplicacion que corre en el puerto 80 al 10000. Asi se crea una conexion SSH encriptada. Asi securizamos Apache.
+
+Si hacemos elinks http://localhost:12000 funciona.
+
+
+e) sshfs lsi@10.11.49.132:/home/lsi/prueba_server /home/lsi/prueba_cliente
+
+El servidor es .132, yo soy el ciente y recibo la info del server. Todo lo que haya en /home/lsi/prueba_server estará en 
+/home/lsi/prueba_cliente de mi maquina.
+
+
+
+
+2.
+
+MAQUINA CA:
+
+Se configura como maquina certificadora usando: ./CA.pl -newca  (/usr/lib/ssl/misc)
+
+Se rellenan los datos:
+
+PEM pass phrase: 1234
+Country name: ES
+State or province: A Coruña
+Locality Name: Coruña
+Organization Name: UDC
+Organizational Unit Name: FIC
+CNAME: IP de la maquina CA (mia o de mi compañero)
+Email: lsi@localhost
+A challengue password:
+
+En demoCA estan las claves y el certificado
+
+./CA.pl -newreq -nodes genera la clave pub y privada (esto lo hace el servidor)
+
+IMPORTANTE: en el common name se pone la direccion IP del solicitante.
+
+
+Este fichero contiene el certificado y la clave pública: newreq.pem
+
+
+La privada: newkey.pem se la mandamos al servidor
+
+
+En misc se genera la firma: ./CA.pl -sign
+
+
+Se guarda en newcert.perm, tiene el certificado firmado y se lo mandamos al servidor
+
+
+Se cambia de carpeta para hacer el update-certificates: cp /usr/lib/ssl/misc/demoCA/cacert.pem /usr/local/share/ca-certificates/cacert.crt
+
+
+Actualizamos los certificados: update-ca-certificates
+
+
+c)
+
+Primero debemos habilitar SSL para apache:
+
+a2enmod ssl
+a2ensite default-ssl
+systemctl restart apache2.service
+
+Configuramos SSL:
+nano /etc/apache2/sites-enabled/default-ssl.conf
+
+SSLCertificateFile /usr/lib/ssl/misc/newcert_.pem
+SSLCertificateKeyFile /usr/lib/ssl/misc/newkey_.pem
+
+Hacemos curl https://IP y no deberia de sacar nada
+
+Si borramos /usr/local/share/ca-certificates/cacert.crt y hacemos un update-ca-certificates y un Curl nos saca un aviso.
+
+wget -ca = certificate/
+
+
+
+3.
+
+
+Instalar OpenVpn: sudo apt install openvpn
+
+
+SERVIDOR:
+
+Genera la key: openvpn --genkey --secret claveVpn.key y se la pasa al cliente.
+
+
+CLIENTE Y SERVIDOR:
+
+Crear fichero de configuracion: etc/openvpn/tunel.conf:
+
+local 10.11.49.122  //La IP de la propia maquina
+remote 10.11.49.132  //La IP del compañero (que será server o client)
+dev tun1
+port 4567
+comp-lzo   //Algoritmo de compresión
+user nobody  //Para evitar que si alguien usa un exploit contra la vpn lo haga como root
+ping 15  PREGUNTAR
+ifconfig 172.160.0.2 172.160.0.1  //Entrada y salida del tunel (en ese orden es para el cliente CUIDADO, de mi al compañero)
+secret /etc/openvpn/claveVpn.key  //Clave compartida
+
+openvpn --config /etc/openvpn/tunel.conf &
+
+
+
+4.
+
+
+El servidor genera las claves: ntp-keygen -M y borramos las 19 ultimas.
+
+El cliente:
+
+chown ntp ntp.keys
+chgrp root ntp.keys
+chmod -R 640 ntp-keys
+
+
+Modifica el ntp.conf y añade la localizacion del fichero de claves: 
+
+keys /ruta
+trustedkey 1
+
+El servidor le pasa el .keys al cliente y este añade:
+
+keys /etc/ntp.keys
+server 10.11.49.132 key 1
+restrict 10.11.49.132 MASK 255.255.255.255 noquery nopeer notrust
+trustedkey 1
+
+
+5.
+
+En caso del SERVER, añadir en rsyslog.conf:
+
+$AllowedSender TCP, 172.160.0.2
+$AllowedSender UDP, 172.160.0.2
+
+if $fromhost-ip == '172.160.0.2' then /var/log/10.11.49.132
+& ~
+
+
+En caso del CLIENTE, añadir en rsyslog.conf:
+
+*.*@@172.160.0.1:514
+
+
+
+6. 
+
+
+
+#!/bin/sh
+
+IP_MIA_33=10.11.49.122
+IP_MIA_34=10.11.51.122
+IP_COMPI_33=10.11.49.132
+IP_COMPI_34=10.11.51.132
+IP_VPN=10.30.8.0/21
+IP_EDUROAM=10.20.32.0/21
+IP_VPN_COMPI=172.160.0.1
+IP_VPN_MIA=172.160.0.2
+IP6_COMPI=2002:a0b:3184::1
+
+
+iptables -F           #Borramos reglas previas
+iptables -X           #Borramos las cadenas definidas por el usuario
+
+ip6tables -F           #Borramos reglas previas
+ip6tables -X
+
+
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT DROP
+
+ip6tables -P INPUT DROP
+ip6tables -P FORWARD DROP
+ip6tables -P OUTPUT DROP
+
+iptables -A INPUT -i lo -j ACCEPT           #Aceptamos salida y entrada de la interfaz de loopback
+iptables -A OUTPUT -o lo -j ACCEPT
+
+iptables -A INPUT -i tun1 -j ACCEPT
+iptables -A OUTPUT -o tun1 -j ACCEPT
+
+ip6tables -A INPUT -i lo -j ACCEPT
+ip6tables -A OUTPUT -o lo -j ACCEPT
+
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT           #Aceptamos todo lo establecido (para eso tiene que poder haberse creado)
+iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT           #Aceptamos todo lo establecido (para eso tiene que poder haberse creado)
+ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+#Permitimos PINGs solo del compañero y  de la VPN, así evitamos ataques
+
+iptables -A INPUT -p ICMP -s $IP_COMPI_34,$IP_COMPI_33 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A OUTPUT -p ICMP -m conntrack --ctstate NEW -j ACCEPT         #Podemos pingear a quien queramos
+
+
+#SSH
+
+iptables -A OUTPUT -p TCP --dport 22 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A INPUT -p TCP --dport 22 -s $IP_VPN,$IP_EDUROAM,$IP_VPN_COMPI,$IP_COMPI_33,$IP_COMPI_34 -d $IP_MIA_33,$IP_MIA_34,172.160.0.2 -m conntrack --ctstate NEW -j ACCEPT           #Para poder entrar desde la VPN y desde EDUROAM
+
+
+#NTP
+
+iptables -A INPUT -p UDP --dport 123 -s $IP_COMPI_33 -d $IP_MIA_33 -m conntrack --ctstate NEW -j ACCEPT            #Permitimos solicitudes al NTP server (yo)
+iptables -A OUTPUT -p UDP --sport 123 -d $IP_COMPI_33 -s $IP_MIA_33 -m conntrack --ctstate NEW -j ACCEPT
+
+
+#SYSLOG, revisar securizacion a traves de VPN
+
+iptables -A INPUT -p TCP --sport 514 -s $IP_COMPI_33,$IP_VPN_COMPI -d $IP_MIA_33,$IP_VPN_MIA -m conntrack --ctstate NEW -j ACCEPT
+iptables -A OUTPUT -p TCP --dport 514 -d $IP_COMPI_33,$IP_VPN_COMPI -s $IP_MIA_33,$IP_VPN_MIA -m conntrack --ctstate NEW -j ACCEPT
+
+
+#DNS
+iptables -A OUTPUT -p UDP --dport 53 -d 10.8.12.49,10.8.12.47,10.8.12.50 -m conntrack --ctstate NEW -j ACCEPT
+
+#OpenVPN
+iptables -A INPUT -p TCP  --dport 4567 -s $IP_VPN_COMPI,$IP_COMPI_33,$IP_MIA_33 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A OUTPUT -p TCP --sport 4567 -d $IP_VPN_COMPI,$IP_COMPI_33,$IP_MIA_33 -m conntrack --ctstate NEW -j ACCEPT
+
+iptables -A INPUT -i ens33 -s $IP_COMPI_33 -p udp -m conntrack --ctstate NEW --dport 4567 -j ACCEPT             #El tunel se levanta desde ens33
+iptables -A OUTPUT -o ens33 -d $IP_COMPI_33 -p udp -m conntrack --ctstate NEW --dport 4567 -j ACCEPT
+
+#ICMP v6 paquetes
+ip6tables -A INPUT -p ipv6-icmp -s $IP6_COMPI -m conntrack --ctstate NEW -j ACCEPT
+ip6tables -A OUTPUT -p ipv6-icmp -m conntrack --ctstate NEW -j ACCEPT
+
+iptables -A INPUT -p 41 -s $IP_COMPI_33,$IP_COMPI_34 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A OUTPUT -p 41 -d $IP_COMPI_33,$IP_COMPI_34 -m conntrack --ctstate NEW -j ACCEPT
+
+#HTTPs
+iptables -A INPUT -p TCP -s $IP_COMPI_33,$IP_COMPI_34 -m multiport --dport 80,443 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A OUTPUT -p TCP -m multiport --dport 80,443 -m conntrack --ctstate NEW -j ACCEPT
+
+#El firewall se ejecuta durante 2 min, despues de descartan todas las reglas
+sleep 1m
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -F
+iptables -X
+
+ip6tables -P INPUT ACCEPT
+ip6tables -P FORWARD ACCEPT
+ip6tables -P OUTPUT ACCEPT
+ip6tables -F
+ip6tables -X
+
+#reboot
+#iptables -A INPUT -p TCP --dport 22 -j LOG --log-prefix 'INTENTO FALLIDO SSH INPUT: ' --log-level 4
+
+
+
+

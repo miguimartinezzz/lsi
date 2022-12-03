@@ -17,7 +17,7 @@ a) Instale el ettercap y pruebe sus opciones básicas en línea de comando.
   
   -> para probar el comando: 
        ettercap -i ens33 -Tq -p -w [fichero donde se guarda] -M arp:remote /10.11.49.97// /10.11.48.1//
-       scp lsi@10.11.49.98:[carpeta donde está el fichero] /home/miguimartinezzz/Documentos                      
+       scp lsi@10.11.49.98:/home/lsi/salidaEttercap /home/miguimartinezzz/Documentos                      
        
    (opciones básicas están en man ettercap)
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

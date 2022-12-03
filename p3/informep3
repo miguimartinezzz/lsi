@@ -1,0 +1,247 @@
+
+                                                      PRACTICA 3 DE LEGISLACIÓN Y SGEGURIDAD INFORMÁTICA. HOJA DE RUTA.        
+
+El objetivo de esta práctica es comprender la importancia de los algoritmos criptográficos,
+	el uso de autoridades de certificación y su aplicación-funcionamiento en la forma de
+	protocolos seguros. También se abordará el proceso de análisis de vulnerabilidades en el
+	contexto de los procesos de auditoría de seguridad. Se deberán aplicar los conceptos
+	adquiridos en la resolución de los siguientes apartados:
+	
+PRESETS: SPLUNK Y APACHE ESTÁ PARADO.	
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1. Tomando como base de trabajo el SSH pruebe sus diversas utilidades:
+	a. Abra un shell remoto sobre SSH y analice el proceso que se realiza. Configure su
+		fichero ssh_known_hosts para dar soporte a la clave pública del servidor
+               
+               #analisis incoming
+               
+               #configuración de ssh_known_hosts
+               ->creamos el fichero /etc/ssh/ssh_known_hosts
+               ->copiamos la clave publica de nuestro compi: ssh-keyscan 10.11.49.97 >> /etc/ssh/ssh_known_hosts
+               ->borramos contenido de .ssh/known_hosts 
+               
+               si nos conectamos por ssh a nuestro compadre y no nos aparece el mensaje del fingerprint -> FUNCIONA JEJE
+               		
+		
+	b. Haga una copia remota de un fichero utilizando un algoritmo de cifrado
+		determinado. Analice el proceso que se realiza.
+		
+		//enviar de mi maquina a la del compa
+		->scp -c aes128-ctr sexo.txt lsi@10.11.49.97:/home/lsi
+		
+		//coger de la otra maquina y copiarlo a la mia:
+		->scp -c aes128-ctr lsi@10.11.49.97:/home/lsi/pito.txt /home/lsi	
+	
+	c. Configure su cliente y servidor para permitir conexiones basadas en un esquema
+		de autenticación de usuario de clave pública.
+		
+		->generar keys: ssh-keygen -t rsa (lo hace con la última versión)
+		->copiar en maq compa: ssh-copy-id -i $HOME/.ssh/id_rsa lsi@10.11.49.97
+		->comprobar si funciona: ssh -v lsi@10.11.49.97 ->si entras sin contraseñita: coolio brotha.
+		
+	d. Mediante túneles SSH securice algún servicio no seguro.
+		
+		ssh -P -L 10080:10.11..49.97:80 lsi@10.11.49.97
+             (comprobar):
+                   -lynx http://localhost:80
+                   
+                   (si sniffeas y no te sale ningún paquete -> todo okay);
+      
+      
+FICHEROS UTILES:
+		-> https://docs.oracle.com/cd/E19683-01/806-4078/6jd6cjru7/index.html
+		->https://www.techrepublic.com/article/how-to-manually-add-ssh-keys-for-key-authentication/
+		(las claves se pasan con sftp en teoría)
+		->https://w3.ual.es/~vruiz/Docencia/Apuntes/Networking/Protocols/Level-5/SSH-Lab/index.html
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2. Tomando como base de trabajo el servidor Apache2
+	a. Configure una Autoridad Certificadora en su equipo.
+	b.Cree su propio certificado para ser firmado por la Autoridad Certificadora. Bueno, y fírmelo.
+	c. Configure su Apache para que únicamente proporcione acceso a un determinado directorio del árbol web bajo la condición del uso de SSL.
+	 Considere que si su la clave privada está cifrada en el proceso de arranque su máquina le solicitará la correspondiente frase de paso, 
+	 pudiendo dejarla inalcanzable para su sesión ssh de trabajo.
+		Escogemos una máquina para Entididad certificadora y otra para el servidor apache, en nuestro caso :
+
+			cr7 -> máquina apache en la 10.11.49.97
+			messi -> entidad certificadora en la 10.11.49.98
+	Antes de hacer nada le ponemos nombres a las máquinas, esto se hace en /etc/hostname,
+	 cambiamos el nombre debian por el que queramos (messi y cr7 en nuestro caso), 
+	 y en /etc/hosts añadimos en ambas maquinas la ip del apache y su nombre, en mi caso:
+
+		10.11.49.97	cr7
+		AVISO: todo se ejecuta desde el usuario lsi, el root solo se usa para modificar el apache
+		Entidad Certificadora :
+		En nuestro caso somos 2 máquinas, por lo que la entidad certificadora (uwu) será también el cliente
+
+		Instalamos easyrsa :
+		Si ya instalaste openvpn (Ejercicio 3) ya lo tienes instalado
+
+		Creamos una carpeta para hacer mierdas:
+		make-cadir easy-rsa/
+		Esto crea un directorio easy-rsa en la carpeta que estéas
+
+		Nos movemos al directorio easy-rsa e iniciamos el pki
+		cd easy-rsa
+		./easyrsa init-pki
+		A partir de aqui pedirán una contraseña, inventate una y no la olvides
+
+		Generamos la entidad certificadora de messi
+		./easyrsa build-ca
+		Generamos el certificado para la maquina apache (cr7)
+		./easyrsa build-server-full cr7
+		Cambia owo por el nombre del servidor que tengas
+
+		Generamos el certificado para el cliente
+		./easyrsa build-client-full messi nopass
+		En nuestro caso, la maquina certificadora (messi) es también el cliente, cambia uwu por el nombre de maquina del cliente
+
+		Servidor apache:
+		Igual que en certificadora, instalamos easy-rsa y creamos una carpeta con el mismo nombre (los 2 primeros pasos)
+		Desde la carpeta easy-rsa copiamos en nuestra maquina los 3 archivos generados por la entidad certificadora:
+		cd easy-rsa
+		sftp lsi@10.11.49.98
+		get /easy-rsa/pki/issued/cr7.crt
+		get /easy-rsa/pki/private/cr7.key
+		get /easy-rsa/pki/ca.crt
+		Cambiamos el tipo del owo.crt a owo.pem
+		mv owo.crt owo.pem
+		Nos metemos en sudo y modificamos/descomentamos en /etc/apache2/sites-enabled/default-ssl.conf las siguientes lineas:
+		SSLCertificateFile      /home/lsi/easy-rsa/pki/issued/cr7.pem
+		SSLCertificateKeyFile  /home/lsi/easy-rsa/pki/private/cr7.key
+
+		SLCACertificatePath /home/lsi/easy-rsa/pki
+		SSLCACertificateFile /home/lsi/easy-rsa/pki/ca.crt
+
+		SSLVerifyClient require
+		reiniciamos el apache y le metemos la contraseña que hayamos usado
+		systemctl restart apache2
+		Cliente
+		Remarco, en nuestro caso la entidad certificadora hará como cliente por lo que reutilizando las carpetas en las que creamos las movidas de cliente
+
+		Creamos un w3m config:
+		nano ~/.w3m/config
+		Y añadimos las siguientes movidas :
+		ssl_cert_file /home/lsi/easy-rsa/pki/issued/messi.crt
+		ssl_key_file /home/lsi/easy-rsa/pki/private/messi.key
+		ssl_ca_file /home/lsi/easy-rsa/pki/ca.crt
+		Finalmente probamos con un :
+		w3m https://owo
+		w3m https://10.11.49.92
+		Aviso post: Es posible que al hacer reboot, el apache empiece a consumir demasiados recursos, 
+		para evitarlo hazle un disable y activalo cndo lo necesites, y a tomar por culo
+
+ 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+3. Tomando como base de trabajo el openVPN deberá configurar una VPN entre dos
+	equipos virtuales del laboratorio que garanticen la confidencialidad entre sus
+	comunicaciones.
+	
+                -apt install openvpn
+		-openssl está instalado
+		-lsmod | grep tun ->Tun es un enlace punto a punto virtual por IP. Es, 
+		por lo tanto una VPN de nivel 3 en la capa OSI (nivel de red). 
+		El problema es que es un enlace punto a punto…es decir conecta dos máquinas y no dos redes.
+		
+		MAQUINA X:
+		-cd /etc/openvpn
+		- --genkey secret clavesita.key
+		
+		MAQUINA Y:
+		-chmod 777 /etc/openvpn
+		-scp -c aes128-ctr /etc/openvpn/clavesita.key lsi@10.11.49.Y:/etc/openvpn/clavesita.key
+		-chmod 775 /etc/openvpn
+		
+		ARCHIVOS DE CONFIGURACIÓN tunel.conf: 
+		local 10.11.49.98
+		remote 10.11.49.97
+		dev tun1
+		port 5555
+		comp-lzo
+		user nobody
+		ping 15
+		ifconfig 172.160.0.1 172.160.0.2
+		secret /etc/openvpn/clavesita.key
+		
+		CREAR CONEXIÓN MEDIANTE: 
+		-openvpn --verb 5 --config /etc/openvpn/tunel.conf
+		
+		-desde otro terminal:
+		-ifconfig -a (para ver si está levantado)
+		-ping 172.160.0.1/2 pa ver si contesta.
+
+
+		
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+6. En este punto, cada máquina virtual será servidor y cliente de diversos servicios (NTP,
+	syslog, ssh, web, etc.). Configure un “firewall stateful” de máquina adecuado a la
+	situación actual de su máquina.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+7. Instale el SIEM splunk en su máquina. Sobre dicha plataforma haga los siguientes puntos.:
+
+        -> INSTALACIÓN
+        
+        -scp splunk-9.0.2-17e00c557dc1-linux-2.6-amd64.deb lsi@10.11.49.98:/home/lsi (desde maq local)
+	-dpkg -i splunk-9.0.2-17e00c557dc1-linux-2.6-amd64.deb
+	-/opt/splunk/bin/splunk enable boot-start
+	    -usr: lsi
+	    -pass: cristiano
+	-systemctl start splunk.service
+	-/opt/splunk/etc/system/default# nano server.conf
+		-cambiar MinFreeDiskSpace = 5000 a 500.
+	-systemctl restart splunk
+	-con vpn encendida hacer http://10.11.49.98:8000   
+        
+        añades los ficheros. -> explorar.  
+        
+	a. Genere una query que visualice los logs internos del splunk
+		
+	b. Cargué el fichero /var/log/apache2/access.log y el journald del
+		sistema y visualícelos.
+	c. Obtenga las IPs de los equipos que se han conectado a su servidor web (pruebe
+		a generar algún tipo de gráfico de visualización), así como las IPs que se han 
+		conectado un determinado día de un determinado mes.
+	d. Trate de obtener el país y región origen de las IPs que se han conectado a su
+		servidor web y si posible sus coordenadas geográficas.
+	e. Obtenga los hosts origen, sources y sourcestypes.
+	f. ¿cómo podría hacer que splunk haga de servidor de log de su cliente?   -> añadir ips de otros paises pa la comprobación :)
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+8. Ejecute la utilidad de auditoría de seguridad lynis en su sistema y trate de identificar las
+	acciones de securización detectadas así como los consejos sobre las que se deberían contemplar.
+	
+	
+	lynis audit system -> te dice que eres basura, absoluta basura.
+	 
+	 (se hizo antes del firewall)
+	 
+	-[ Lynis 3.0.2 Results ]-
+
+  Warnings (2):
+  ----------------------------
+  ! Nameserver 10.8.12.47 does not respond [NETW-2704] 
+      https://cisofy.com/lynis/controls/NETW-2704/
+
+  ! iptables module(s) loaded, but no rules active [FIRE-4512] 
+      https://cisofy.com/lynis/controls/FIRE-4512/
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+9. EN LA PRÁCTICA 2 se obtuvo un perfil de los principales sistemas que conviven en su
+	red, puertos accesibles, fingerprinting, paquetería de red, etc. Seleccione un subconjunto
+	de máquinas del laboratorio de prácticas y la propia red. Elabore el correspondiente
+	informe de análisis de vulnerabilidades. Puede utilizar como apoyo al análisis la
+	herramienta Nessus Essentials (disponible para educación en
+	https://www.tenable.com/tenable-for-education/nessus-essentials bajo registro para
+	obtener un código de activación) para su instalación en la máquina debian de prácticas.
+	Muestra las etapas o fases del desarrollo de un “report”, describe el
+	formato del “report” y finaliza con un ejemplo. http://www.sans.org/reading-
+	room/whitepapers/bestprac/writing-penetration-testing-report-33343?show=writing-
+	penetration-testing-report-33343&cat=bestprac
+
+b. Plantilla de vulnerabilityassessment.co.uk.
+h	ttp://www.vulnerabilityassessment.co.uk/report%20template.html
+
+
+
+
+OPENVAS SPLUNK SSH FIREWALL EN LAS DOS MAQUINAS.
+

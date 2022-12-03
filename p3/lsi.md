@@ -1,0 +1,6 @@
+El servidor crea una llave privada y en base a esta genera una publica para realizar la peticion (el CN de la peticion tiene que ser el ServerName de apache), se manda la peticion a la CA y la firma con su llave, una vez firmada la Ca manda de vuelta al servidor la llave publica firmada y su propia llave publica. El servidor a continuacion en /etc/apache2/sites-enabled/default-ssl.conf pone donde tiene su llave publica, privada y la de la autoridad certificadora (y su ServerName), añade en /etc/hosts la ip de la autoridad certificadora y el CN que ponga en el certificado de la autoridad certificadora. A continuacion el cliente que vaya a acceder al https incluye en /etc/hosts la ip y nombre de la CA e ip y nombre del servidor web (ip del compañero y ServerName) y mete el certificado de la CA (como .crt no .pem o no lo pilla) en /usr/local/share/ca-certificates y hace update-ca-certificates en terminal (esto instala el certificado de la CA en tu maquina). Para firefox en Preferencias y seguridad importa el certificado de la CA en /usr/local... y ya puede acceder desde firefox.
+
+
+pagina base: https://juantrucupei.wordpress.com/2017/10/27/autenticacion-de-webservice-por-certificado-ssl/
+
+(formatear bien)
